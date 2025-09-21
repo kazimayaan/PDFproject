@@ -12,10 +12,11 @@ export default function ViewerPage() {
   const [meta, setMeta] = useState(null);
   const [numPages, setNumPages] = useState(null);
   const [page, setPage] = useState(1);
-  const [anns, setAnns] = useState([]); // local annotations
+  const [anns, setAnns] = useState([]);
   const containerRef = useRef(null);
 
-  // fetch document metadata
+  const [dragging, setDragging] = useState(null); // {id, type, startX, startY, startW, startH}
+
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -30,14 +31,21 @@ export default function ViewerPage() {
     return () => { alive = false; };
   }, [SERVER, docId]);
 
-  // add annotation by clicking on PDF
   const handleAdd = (e) => {
+    if (dragging) return; // prevent adding while dragging/resizing
     const el = containerRef.current;
     if (!el) return;
-
     const r = el.getBoundingClientRect();
     const px = (e.clientX - r.left) / r.width;
     const py = (e.clientY - r.top) / r.height;
+
+    // prevent adding if click is on existing box
+    const clickedOnBox = anns.some(a =>
+      page === a.page &&
+      px >= a.x && px <= a.x + a.w &&
+      py >= a.y && py <= a.y + a.h
+    );
+    if (clickedOnBox) return;
 
     const ann = {
       id: Date.now(),
@@ -47,23 +55,64 @@ export default function ViewerPage() {
       w: 0.18,
       h: 0.1,
       text: "",
-      editing: true, // start in editing mode
+      editing: true,
     };
 
-    setAnns((prev) => [...prev, ann]);
+    setAnns(prev => [...prev, ann]);
   };
 
-  // update text for annotation
   const updateText = (id, text) => {
     setAnns(prev => prev.map(a => a.id === id ? { ...a, text } : a));
   };
 
-  // finish editing
   const finishEditing = (id) => {
     setAnns(prev => prev.map(a => a.id === id ? { ...a, editing: false } : a));
   };
 
-  // submit annotations to server
+  const handleMouseDown = (e, ann, type) => {
+    e.stopPropagation();
+    const el = containerRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    setDragging({
+      id: ann.id,
+      type, // 'move' or 'resize'
+      startX: (e.clientX - r.left) / r.width,
+      startY: (e.clientY - r.top) / r.height,
+      startW: ann.w,
+      startH: ann.h,
+      origX: ann.x,
+      origY: ann.y
+    });
+  };
+
+  const handleMouseMove = (e) => {
+    if (!dragging) return;
+    const el = containerRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width;
+    const py = (e.clientY - r.top) / r.height;
+
+    setAnns(prev =>
+      prev.map(a => {
+        if (a.id !== dragging.id) return a;
+        if (dragging.type === "move") {
+          let newX = dragging.origX + (px - dragging.startX);
+          let newY = dragging.origY + (py - dragging.startY);
+          return { ...a, x: Math.max(0, Math.min(0.95, newX)), y: Math.max(0, Math.min(0.95, newY)) };
+        } else if (dragging.type === "resize") {
+          let newW = dragging.startW + (px - dragging.startX);
+          let newH = dragging.startH + (py - dragging.startY);
+          return { ...a, w: Math.max(0.05, Math.min(1 - a.x, newW)), h: Math.max(0.05, Math.min(1 - a.y, newH)) };
+        }
+        return a;
+      })
+    );
+  };
+
+  const handleMouseUp = () => setDragging(null);
+
   const handleSubmit = async () => {
     try {
       const res = await fetch(`${SERVER}/api/docs/${docId}/annotations`, {
@@ -86,44 +135,22 @@ export default function ViewerPage() {
       {!meta && <div>Loading document…</div>}
       {meta && (
         <>
-          <div className="toolbar">
+          <div className="toolbar" style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <div style={{ fontWeight: 600 }}>{meta.originalName}</div>
-            <a
-              className="link"
-              href={`${SERVER}/uploads/${meta.filename}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Open raw PDF
-            </a>
-            <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
-              <button
-                className="btn"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page <= 1}
-              >
-                Prev
-              </button>
-              <div style={{ alignSelf: "center" }}>
-                Page {page}{numPages ? ` / ${numPages}` : ""}
-              </div>
-              <button
-                className="btn"
-                onClick={() => setPage((p) => Math.min(numPages || p + 1, p + 1))}
-                disabled={!numPages || page >= numPages}
-              >
-                Next
-              </button>
-            </div>
+            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}>Prev</button>
+            <div>Page {page}{numPages ? ` / ${numPages}` : ""}</div>
+            <button onClick={() => setPage(p => Math.min(numPages || p + 1, p + 1))} disabled={!numPages || page >= numPages}>Next</button>
           </div>
 
           <p className="hint">
-            Click anywhere on the PDF to drop an annotation box and enter text.
+            Click anywhere on the PDF to drop an annotation. Drag or resize boxes as needed.
           </p>
 
           <div
             ref={containerRef}
             onClick={handleAdd}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
             style={{
               position: "relative",
               width: "100%",
@@ -138,12 +165,7 @@ export default function ViewerPage() {
               loading={<div style={{ padding: 24 }}>Loading PDF…</div>}
               error={<div style={{ padding: 24, color: "#c00" }}>Failed to load PDF</div>}
             >
-              <Page
-                pageNumber={page}
-                width={920}
-                renderTextLayer={false}
-                renderAnnotationLayer={false}
-              />
+              <Page pageNumber={page} width={920} renderTextLayer={false} renderAnnotationLayer={false} />
             </Document>
 
             {/* Overlay annotations */}
@@ -183,12 +205,25 @@ export default function ViewerPage() {
                       padding: "2px",
                       fontSize: "14px",
                       overflow: "hidden",
-                      cursor: "text"
+                      whiteSpace: "pre-wrap",
+                      cursor: "move",
+                      boxSizing: "border-box"
                     }}
-                    onDoubleClick={() => updateText(a.id, a.text)}
-                    title={a.text}
+                    onMouseDown={(e) => handleMouseDown(e, a, "move")}
                   >
                     {a.text}
+                    <div
+                      onMouseDown={(e) => handleMouseDown(e, a, "resize")}
+                      style={{
+                        position: "absolute",
+                        right: 0,
+                        bottom: 0,
+                        width: 10,
+                        height: 10,
+                        backgroundColor: "red",
+                        cursor: "nwse-resize"
+                      }}
+                    />
                   </div>
                 )
               ))}
