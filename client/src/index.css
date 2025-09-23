@@ -18,3 +18,61 @@ html, body, #root { height: 100%; margin: 0; }
 div:hover > .delete-btn {
   display: block !important;
 }
+.navButons{
+  color: black;
+  background-color: rgb(215, 245, 255);
+  padding: 8px 10px;
+  border-radius: 6px;
+  border-color: lightskyblue;
+
+}
+.headerforview{
+  display: flex;
+  flex: auto;
+  align-items: center;
+  justify-content: center;
+}
+.toolbar > :nth-child(2) {
+  margin-left: auto;
+  margin-right: auto;
+}
+.navbuttonwrapper {
+  display: flex;
+}
+
+.navbuttonwrapper > *{
+  display: flex;
+  margin: 10px;
+}
+
+.pagesNumber{
+  margin: auto;
+}
+.annotateButton{
+  color: black;
+  background-color: rgb(215, 245, 255);
+  padding: 8px 10px;
+  border-radius: 6px;
+  border-color: lightskyblue;
+}
+
+.UtilityButtons{
+  display: flex;
+  
+}
+.btn-active{
+  color: red;
+  border : 2px solid red;
+  border-radius: 3px;
+  background-color: white;
+  padding: 8px 10px;
+}
+
+.submitButton{
+  background-color: lightcoral;
+  border-radius: 3px;
+}
+
+.hintforuser{
+  
+}

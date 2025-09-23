@@ -20,7 +20,7 @@ export default function ViewerPage() {
   const [dragCurrent, setDragCurrent] = useState(null);
   const [dragging, setDragging] = useState(null);
 
-  // fetch metadata
+  // Fetch document metadata
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -37,7 +37,20 @@ export default function ViewerPage() {
     };
   }, [SERVER, docId]);
 
-  // --- Annotation Logic ---
+  // Fetch existing annotations
+  useEffect(() => {
+    if (!meta) return;
+    let alive = true;
+    (async () => {
+      const res = await fetch(`${SERVER}/api/docs/${docId}/annotations`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (alive) setAnns(data);
+    })();
+    return () => { alive = false };
+  }, [SERVER, docId, meta]);
+
+  // --- Annotation logic ---
   const handleMouseDown = (e) => {
     if (mode !== "annotate") return;
     const el = containerRef.current;
@@ -137,7 +150,9 @@ export default function ViewerPage() {
     });
   };
 
+  // Submit annotations to backend
   const handleSubmit = async () => {
+    if (!meta) return;
     try {
       const res = await fetch(`${SERVER}/api/docs/${docId}/annotations`, {
         method: "POST",
@@ -158,7 +173,9 @@ export default function ViewerPage() {
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
     >
-      <h2 style={{ marginTop: 0 }}>Viewer</h2>
+      <h2 className="headerforview" style={{ marginTop: 0 }}>
+        Annotation Tool
+      </h2>
 
       {!meta && <div>Loading document…</div>}
       {meta && (
@@ -169,33 +186,47 @@ export default function ViewerPage() {
             style={{ display: "flex", gap: 8, alignItems: "center" }}
           >
             <div style={{ fontWeight: 600 }}>{meta.originalName}</div>
-            <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}>
-              Prev
-            </button>
-            <div>
-              Page {page}
-              {numPages ? ` / ${numPages}` : ""}
-            </div>
-            <button
-              onClick={() => setPage((p) => Math.min(numPages || p + 1, p + 1))}
-              disabled={!numPages || page >= numPages}
-            >
-              Next
-            </button>
-            <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+            <div className="navbuttonwrapper">
               <button
-                className={mode === "annotate" ? "btn-active" : "btn"}
+                className="navButons"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+              >
+                Prev
+              </button>
+              <div className="pagesNumber">
+                Page {page}
+                {numPages ? ` / ${numPages}` : ""}
+              </div>
+              <button
+                className="navButons"
+                onClick={() =>
+                  setPage((p) => Math.min(numPages || p + 1, p + 1))
+                }
+                disabled={!numPages || page >= numPages}
+              >
+                Next
+              </button>
+            </div>
+            <div
+              className="UtilityButtons"
+              style={{ marginLeft: "auto", display: "flex", gap: 8 }}
+            >
+              <button
+                className={
+                  mode === "annotate" ? "btn-active annotateButton" : "annotateButton"
+                }
                 onClick={() => setMode(mode === "annotate" ? "view" : "annotate")}
               >
                 {mode === "annotate" ? "Cancel" : "Add Annotation"}
               </button>
-              <button className="btn" onClick={handleSubmit}>
-                Save
+              <button className="submitButton" onClick={handleSubmit}>
+                Submit
               </button>
             </div>
           </div>
 
-          <p className="hint">
+          <p className="hintforuser">
             {mode === "annotate"
               ? "Drag on the PDF to draw a box for your comment."
               : "Double-click a box to edit text, or hover to delete."}
@@ -215,7 +246,7 @@ export default function ViewerPage() {
             }}
           >
             <Document
-              file={`${SERVER}/uploads/${meta.filename}`}
+              file={meta.cloudUrl}
               onLoadSuccess={({ numPages }) => setNumPages(numPages)}
               loading={<div style={{ padding: 24 }}>Loading PDF…</div>}
               error={<div style={{ padding: 24, color: "#c00" }}>Failed to load PDF</div>}
@@ -282,46 +313,24 @@ export default function ViewerPage() {
                     >
                       {a.text}
 
-                      {/* Hover delete button */}
+                      {/* Resize handle */}
                       <div
+                        onMouseDown={(e) => handleDragMove(e, a, "resize")}
                         style={{
                           position: "absolute",
-                          top: 0,
                           right: 0,
-                          background: "rgba(255,0,0,0.8)",
-                          color: "#fff",
-                          fontSize: 12,
-                          padding: "2px 4px",
-                          cursor: "pointer",
-                          display: "none",
+                          bottom: 0,
+                          width: 10,
+                          height: 10,
+                          backgroundColor: "red",
+                          cursor: "nwse-resize",
                         }}
-                        className="delete-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setAnns((prev) => prev.filter((ann) => ann.id !== a.id));
-                        }}
-                      >
-                        ❌
-                      </div>
-                      {/* Resize handle */}
-<div
-  onMouseDown={(e) => handleDragMove(e, a, "resize")}
-  style={{
-    position: "absolute",
-    right: 0,
-    bottom: 0,
-    width: 10,
-    height: 10,
-    backgroundColor: "red",
-    cursor: "nwse-resize",
-  }}
-/>
-
+                      />
                     </div>
                   )
                 )}
 
-              {/* 🔹 Blue dashed preview box while drawing */}
+              {/* Preview box while drawing */}
               {dragStart && dragCurrent && (
                 <div
                   style={{

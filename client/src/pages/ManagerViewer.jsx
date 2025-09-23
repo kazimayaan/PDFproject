@@ -16,7 +16,7 @@ export default function ManagerViewer() {
   const containerRef = useRef(null);
 
   useEffect(() => {
-    // fetch document metadata
+    // Fetch document metadata
     const fetchMeta = async () => {
       const res = await fetch(`${SERVER}/api/docs/${docId}`);
       if (!res.ok) {
@@ -28,7 +28,7 @@ export default function ManagerViewer() {
     };
     fetchMeta();
 
-    // fetch annotations
+    // Fetch annotations
     const fetchAnns = async () => {
       const res = await fetch(`${SERVER}/api/docs/${docId}/annotations`);
       if (!res.ok) return;
@@ -44,17 +44,27 @@ export default function ManagerViewer() {
       {!meta && <div>Loading document…</div>}
       {meta && (
         <>
+          {/* Toolbar */}
           <div className="toolbar" style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <div style={{ fontWeight: 600 }}>{meta.originalName}</div>
-            <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}>
+            <button
+              className="navButons"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+            >
               Prev
             </button>
             <div>Page {page}{numPages ? ` / ${numPages}` : ""}</div>
-            <button onClick={() => setPage((p) => Math.min(numPages || p + 1, p + 1))} disabled={!numPages || page >= numPages}>
+            <button
+              className="navButons"
+              onClick={() => setPage((p) => Math.min(numPages || p + 1, p + 1))}
+              disabled={!numPages || page >= numPages}
+            >
               Next
             </button>
           </div>
 
+          {/* PDF Container */}
           <div
             ref={containerRef}
             style={{
@@ -67,7 +77,7 @@ export default function ManagerViewer() {
             }}
           >
             <Document
-              file={`${SERVER}/uploads/${meta.filename}`}
+              file={meta.cloudUrl} // <-- Cloudinary URL now
               onLoadSuccess={({ numPages }) => setNumPages(numPages)}
               loading={<div style={{ padding: 24 }}>Loading PDF…</div>}
               error={<div style={{ padding: 24, color: "#c00" }}>Failed to load PDF</div>}
@@ -80,7 +90,7 @@ export default function ManagerViewer() {
               />
             </Document>
 
-            {/* Overlay annotations with text */}
+            {/* Overlay annotations */}
             <div style={{ position: "absolute", inset: 0 }}>
               {anns
                 .filter(a => a.page === page)

@@ -2,13 +2,16 @@ import { Routes, Route, Link } from 'react-router-dom'
 import UploadPage from './pages/UploadPage.jsx'
 import ViewerPage from './pages/ViewerPage.jsx'
 import ManagerViewer from './pages/ManagerViewer';
-
+// import logo from "E:/PDFproject/client/src/assets/logo.png";
 export default function App() {
   return (
     <div style={{ fontFamily: 'Inter, system-ui, Arial, sans-serif' }}>
-      <header style={{ padding: '12px 16px', borderBottom: '1px solid #eee', display:'flex', gap:12, alignItems:'center' }}>
-        <Link to="/" style={{ fontWeight: 700, textDecoration: 'none', color: '#111' }}>PDF Proto</Link>
-        <span style={{ fontSize: 12, color: '#777' }}>upload & annotate </span>
+      <header style={{ padding: '12px 16px', borderBottom: '1px solid #eee', display:'flex', gap:12, alignItems:'center' , justifyContent:'center'}}>
+        {/* <Link to="/" style={{fontWeight: 700, textDecoration: 'none', color: '#111' }}>EManuscript Annotation tool</Link> */}
+        {/* <span style={{ fontSize: 12, color: '#777' }}>upload & annotate </span> */}
+        <a href="https://emanuscriptonline.com/index.php/index" class="is_img"><a href="https://emanuscriptonline.com/index.php/index" className="is_img">
+  <img src="https://emanuscriptonline.com/public/site/pageHeaderTitleImage_en_US.png" alt="Logo" style={{ height: "40px" }} />
+</a></a>
       </header>
       <main style={{ padding: 16, maxWidth: 960, margin: '0 auto' }}>
         <Routes>
