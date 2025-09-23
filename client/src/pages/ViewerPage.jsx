@@ -90,7 +90,7 @@ export default function ViewerPage() {
     }
   };
 
-  const handleMouseUp = (e) => {
+  const handleMouseUp = () => {
     if (mode === "annotate" && dragStart && dragCurrent) {
       const ann = {
         id: Date.now(),
@@ -303,6 +303,20 @@ export default function ViewerPage() {
                       >
                         ❌
                       </div>
+                      {/* Resize handle */}
+<div
+  onMouseDown={(e) => handleDragMove(e, a, "resize")}
+  style={{
+    position: "absolute",
+    right: 0,
+    bottom: 0,
+    width: 10,
+    height: 10,
+    backgroundColor: "red",
+    cursor: "nwse-resize",
+  }}
+/>
+
                     </div>
                   )
                 )}
