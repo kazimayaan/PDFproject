@@ -10,7 +10,6 @@ const cloudinary = require("cloudinary").v2;
 const { connectDB } = require("./db");
 const { createClient } = require("@supabase/supabase-js");
 
-
 // ---------- Config ----------
 const PORT = process.env.PORT || 4000;
 const CORS_ORIGIN = process.env.CORS_ORIGIN || "*";
@@ -37,8 +36,6 @@ const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_KEY
 );
-
-
 
 // Multer memory storage for Cloudinary
 const storage = multer.memoryStorage();
@@ -78,6 +75,17 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
       cloudPublicId,
       createdAt: new Date(),
     });
+
+    //uploading to supabase:
+    const { data, error } = await supabase.from("pdf_documents").insert([
+      {
+        doc_id: docId,
+        pdf_name: originalName, // from upload
+        author_name: req.body.author || "Unknown", // if you pass from client
+        cloud_url: cloudUrl,
+        cloud_public_id: cloudPublicId,
+      },
+    ]);
 
     // Respond with Cloudinary info
     res.json({ docId, originalName, cloudUrl, cloudPublicId });
