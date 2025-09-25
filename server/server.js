@@ -77,17 +77,18 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
       createdAt: new Date(),
     });
 
-    //uploading to supabase:
-    const { data, error } = await supabase.from("pdf_documents").insert([
+    // uploading to supabase:
+    const { data, error } = await supabase.from("pdf_files").insert([
       {
         doc_id: docId,
         pdf_name: originalName,
         author_name: req.body.author || "Unknown",
-        author_message: req.body.authorMessage || "", // NEW
+        author_message: req.body.authorMessage || "",
         cloud_url: cloudUrl,
         cloud_public_id: cloudPublicId,
       },
     ]);
+
     if (error) {
       console.error("Supabase insert error:", error);
     }

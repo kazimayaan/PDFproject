@@ -19,7 +19,7 @@ export default function AdminPage() {
       try {
         setLoading(true);
         const { data, error } = await supabase
-          .from("pdf_documents")
+          .from("pdf_files")
           .select("*")
           .order("created_at", { ascending: false });
 
