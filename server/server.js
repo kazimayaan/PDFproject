@@ -178,3 +178,4 @@ server.listen(PORT, () => {
 });
 
 // latest??
+// works fine till here, planning to add closing button func and admin page functionality
