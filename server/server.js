@@ -8,6 +8,8 @@ const { v4: uuidv4 } = require("uuid");
 require("dotenv").config();
 const cloudinary = require("cloudinary").v2;
 const { connectDB } = require("./db");
+const { createClient } = require("@supabase/supabase-js");
+
 
 // ---------- Config ----------
 const PORT = process.env.PORT || 4000;
@@ -30,6 +32,13 @@ cloudinary.config({
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
+// supabase config
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_KEY
+);
+
+
 
 // Multer memory storage for Cloudinary
 const storage = multer.memoryStorage();
