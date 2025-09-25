@@ -2,6 +2,8 @@ import { Routes, Route, Link } from 'react-router-dom'
 import UploadPage from './pages/UploadPage.jsx'
 import ViewerPage from './pages/ViewerPage.jsx'
 import ManagerViewer from './pages/ManagerViewer';
+import AdminPage from './pages/AdminPage.jsx';
+
 // import logo from "E:/PDFproject/client/src/assets/logo.png";
 export default function App() {
   return (
@@ -18,6 +20,7 @@ export default function App() {
           <Route path="/" element={<UploadPage />} />
           <Route path="/doc/:docId" element={<ViewerPage />} />
           <Route path="/manager/:docId" element={<ManagerViewer />} />
+          <Route path="/admin" element={<AdminPage />} />
         </Routes>
       </main>
     </div>

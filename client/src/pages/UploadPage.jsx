@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 
 export default function UploadPage() {
   const [file, setFile] = useState(null)
+  const [authorName, setAuthorName] = useState("")
+  const [authorMessage, setAuthorMessage] = useState("")
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
   const SERVER = import.meta.env.VITE_SERVER_URL
@@ -13,10 +15,13 @@ export default function UploadPage() {
       setLoading(true)
       const fd = new FormData()
       fd.append('file', file)
+      fd.append('author', authorName)
+      fd.append('authorMessage', authorMessage)
+
       const res = await fetch(`${SERVER}/api/upload`, { method: 'POST', body: fd })
       if (!res.ok) throw new Error('Upload failed')
       const json = await res.json()
-      setResult(json) // { docId, url, originalName }
+      setResult(json)
     } catch (e) {
       console.error(e)
       alert(e.message || 'Error uploading')
@@ -28,6 +33,22 @@ export default function UploadPage() {
   return (
     <div className="card">
       <h2 style={{ marginTop: 0 }}>Upload a PDF</h2>
+      <div style={{ display:'flex', gap:12, alignItems:'center', marginBottom: 8 }}>
+        <input
+          className="input"
+          type="text"
+          placeholder="Author Name"
+          value={authorName}
+          onChange={e => setAuthorName(e.target.value)}
+        />
+        <input
+          className="input"
+          type="text"
+          placeholder="Author Message"
+          value={authorMessage}
+          onChange={e => setAuthorMessage(e.target.value)}
+        />
+      </div>
       <div style={{ display:'flex', gap:12, alignItems:'center' }}>
         <input
           className="input"

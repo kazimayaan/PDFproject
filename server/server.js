@@ -80,12 +80,16 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
     const { data, error } = await supabase.from("pdf_documents").insert([
       {
         doc_id: docId,
-        pdf_name: originalName, // from upload
-        author_name: req.body.author || "Unknown", // if you pass from client
+        pdf_name: originalName,
+        author_name: req.body.author || "Unknown",
+        author_message: req.body.authorMessage || "", // NEW
         cloud_url: cloudUrl,
         cloud_public_id: cloudPublicId,
       },
     ]);
+    if (error) {
+      console.error("Supabase insert error:", error);
+    }
 
     // Respond with Cloudinary info
     res.json({ docId, originalName, cloudUrl, cloudPublicId });
