@@ -91,6 +91,8 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
 
     if (error) {
       console.error("Supabase insert error:", error);
+    } else {
+      console.log("✅ Supabase insert success:", data);
     }
 
     // Respond with Cloudinary info
