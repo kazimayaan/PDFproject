@@ -313,6 +313,29 @@ export default function ViewerPage() {
                     >
                       {a.text}
 
+
+
+{/* Delete button */}
+<div
+    onClick={() => setAnns((prev) => prev.filter((ann) => ann.id !== a.id))}
+    style={{
+      position: "absolute",
+      top: 0,
+      right: 0,
+      width: 20,
+      height: 20,
+      backgroundColor: "red",
+      color: "white",
+      fontWeight: "bold",
+      textAlign: "center",
+      lineHeight: "20px",
+      cursor: "pointer",
+      display: "none", // initially hidden
+    }}
+    className="delete-btn"
+  >
+    ×
+  </div>
                       {/* Resize handle */}
                       <div
                         onMouseDown={(e) => handleDragMove(e, a, "resize")}
