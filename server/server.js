@@ -86,6 +86,7 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
         author_message: req.body.authorMessage || "",
         cloud_url: cloudUrl,
         cloud_public_id: cloudPublicId,
+        created_at: new Date().toISOString(),
       },
     ]);
 
