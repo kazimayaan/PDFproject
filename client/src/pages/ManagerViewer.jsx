@@ -52,31 +52,9 @@ export default function ManagerViewer() {
   };
 
   return (
-    <div style={{ display: "flex", gap: 12 }}>
-      {/* Left: Comment list */}
-      <div style={{ flex: 1, border: "1px solid #eee", borderRadius: 8, padding: 12, maxHeight: "90vh", overflowY: "auto" }}>
-        <h3>Comments</h3>
-        {anns.length === 0 && <p>No annotations</p>}
-        {anns.map((a, index) => (
-          <div
-            key={a.id}
-            onClick={() => handleSelectAnn(a)}
-            style={{
-              padding: "6px 8px",
-              marginBottom: 4,
-              borderRadius: 4,
-              cursor: "pointer",
-              backgroundColor: selectedAnn?.id === a.id ? "#d0ebff" : "#f5f5f5",
-            }}
-          >
-            <strong>{`${index + 1}${getOrdinal(index + 1)} comment`}</strong>
-            <p style={{ margin: "4px 0" }}>{a.text || "No comment"}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Center: PDF Viewer */}
-      <div style={{ flex: 3 }}>
+    <div className="card" style={{ display: "flex", gap: 12 }}>
+      {/* PDF Left Pane */}
+      <div style={{ flex: 2 }}>
         <h2>Manager Viewer</h2>
         {!meta && <div>Loading document…</div>}
         {meta && (
@@ -121,7 +99,7 @@ export default function ManagerViewer() {
               >
                 <Page
                   pageNumber={page}
-                  width={920}
+                  width={600}
                   renderTextLayer={false}
                   renderAnnotationLayer={false}
                 />
@@ -161,16 +139,58 @@ export default function ManagerViewer() {
         )}
       </div>
 
-      {/* Right: Placeholder if needed for future comment details */}
-      <div style={{ flex: 1, border: "1px solid #eee", borderRadius: 8, padding: 12, minHeight: "90vh" }}>
-        {selectedAnn ? (
-          <>
-            <h3>Selected Comment</h3>
-            <p>{selectedAnn.text || "No comment text"}</p>
-          </>
-        ) : (
-          <p>Click a comment to see details here</p>
-        )}
+      {/* Right Pane */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+        {/* Comment Viewer */}
+        <div
+          style={{
+            minHeight: 120,
+            border: "1px solid #ddd",
+            borderRadius: 8,
+            padding: 8,
+            marginBottom: 12,
+            backgroundColor: "#f9f9f9",
+            overflowY: "auto",
+          }}
+        >
+          {selectedAnn ? (
+            <>
+              <strong>Selected Comment:</strong>
+              <p style={{ marginTop: 4 }}>{selectedAnn.text || "No comment"}</p>
+            </>
+          ) : (
+            <p>Select an annotation to view comment</p>
+          )}
+        </div>
+
+        {/* List of comments */}
+        <div
+          style={{
+            flex: 1,
+            border: "1px solid #ddd",
+            borderRadius: 8,
+            padding: 8,
+            overflowY: "auto",
+          }}
+        >
+          <h4>All Annotations</h4>
+          {anns.length === 0 && <p>No annotations</p>}
+          {anns.map((a, index) => (
+            <div
+              key={a.id}
+              onClick={() => handleSelectAnn(a)}
+              style={{
+                padding: "6px 8px",
+                marginBottom: 4,
+                borderRadius: 4,
+                cursor: "pointer",
+                backgroundColor: selectedAnn?.id === a.id ? "#d0ebff" : "#f5f5f5",
+              }}
+            >
+              <strong>{`${index + 1}${getOrdinal(index + 1)} comment`}</strong>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
