@@ -316,26 +316,24 @@ export default function ViewerPage() {
 
 
 {/* Delete button */}
-<div
-    onClick={() => setAnns((prev) => prev.filter((ann) => ann.id !== a.id))}
+  {/* Delete Button as Image */}
+  <img
+    src="https://www.pngfind.com/pngs/m/3-31254_red-cross-mark-clipart-black-background-red-x.png"
+    alt="Delete"
+    onClick={() =>
+      setAnns((prev) => prev.filter((ann) => ann.id !== a.id))
+    }
     style={{
       position: "absolute",
-      top: 0,
-      right: 0,
-      width: 20,
-      height: 20,
-      backgroundColor: "red",
-      color: "white",
-      fontWeight: "bold",
-      textAlign: "center",
-      lineHeight: "20px",
+      top: "0px",
+      right: "0px",
+      width: "20px",
+      height: "19px",
       cursor: "pointer",
-      display: "none", // initially hidden
+      zIndex: 10,
     }}
-    className="delete-btn"
-  >
-    ×
-  </div>
+  />
+
                       {/* Resize handle */}
                       <div
                         onMouseDown={(e) => handleDragMove(e, a, "resize")}
