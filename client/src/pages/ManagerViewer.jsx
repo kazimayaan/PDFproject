@@ -13,11 +13,10 @@ export default function ManagerViewer() {
   const [anns, setAnns] = useState([]);
   const [page, setPage] = useState(1);
   const [numPages, setNumPages] = useState(null);
-  const [selectedAnn, setSelectedAnn] = useState(null); // <-- selected annotation
+  const [selectedAnn, setSelectedAnn] = useState(null);
   const containerRef = useRef(null);
 
   useEffect(() => {
-    // Fetch document metadata
     const fetchMeta = async () => {
       const res = await fetch(`${SERVER}/api/docs/${docId}`);
       if (!res.ok) {
@@ -29,7 +28,6 @@ export default function ManagerViewer() {
     };
     fetchMeta();
 
-    // Fetch annotations
     const fetchAnns = async () => {
       const res = await fetch(`${SERVER}/api/docs/${docId}/annotations`);
       if (!res.ok) return;
@@ -39,9 +37,36 @@ export default function ManagerViewer() {
     fetchAnns();
   }, [SERVER, docId]);
 
+  const handleSelectAnn = (ann) => {
+    setSelectedAnn(ann);
+    setPage(ann.page); // navigate to the annotation's page
+  };
+
   return (
-    <div className="card" style={{ display: "flex", gap: 16 }}>
-      {/* PDF Viewer */}
+    <div style={{ display: "flex", gap: 16 }}>
+      {/* Left: List of annotations */}
+      <div style={{ flex: 1, border: "1px solid #eee", borderRadius: 8, padding: 12, maxHeight: "90vh", overflowY: "auto" }}>
+        <h3>Annotations</h3>
+        {anns.length === 0 && <p>No annotations</p>}
+        {anns.map((a) => (
+          <div
+            key={a.id}
+            onClick={() => handleSelectAnn(a)}
+            style={{
+              padding: "6px 8px",
+              marginBottom: 4,
+              borderRadius: 4,
+              cursor: "pointer",
+              backgroundColor: selectedAnn?.id === a.id ? "#d0ebff" : "#f5f5f5",
+            }}
+          >
+            <strong>Page {a.page}</strong>
+            <p style={{ margin: "4px 0" }}>{a.text || "No comment"}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Center: PDF Viewer */}
       <div style={{ flex: 3 }}>
         <h2>Manager Viewer</h2>
         {!meta && <div>Loading document…</div>}
@@ -50,24 +75,12 @@ export default function ManagerViewer() {
             {/* Toolbar */}
             <div className="toolbar" style={{ display: "flex", gap: 8, alignItems: "center" }}>
               <div style={{ fontWeight: 600 }}>{meta.originalName}</div>
-              <button
-                className="navButons"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page <= 1}
-              >
-                Prev
-              </button>
+              <button className="navButons" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}>Prev</button>
               <div>Page {page}{numPages ? ` / ${numPages}` : ""}</div>
-              <button
-                className="navButons"
-                onClick={() => setPage((p) => Math.min(numPages || p + 1, p + 1))}
-                disabled={!numPages || page >= numPages}
-              >
-                Next
-              </button>
+              <button className="navButons" onClick={() => setPage((p) => Math.min(numPages || p + 1, p + 1))} disabled={!numPages || page >= numPages}>Next</button>
             </div>
 
-            {/* PDF Container */}
+            {/* PDF */}
             <div
               ref={containerRef}
               style={{
@@ -76,7 +89,7 @@ export default function ManagerViewer() {
                 border: "1px solid #eee",
                 borderRadius: 12,
                 overflow: "hidden",
-                marginTop: 12
+                marginTop: 12,
               }}
             >
               <Document
@@ -130,12 +143,12 @@ export default function ManagerViewer() {
         )}
       </div>
 
-      {/* Right-side comment panel */}
+      {/* Right: Selected annotation details */}
       <div style={{ flex: 1, border: "1px solid #eee", borderRadius: 8, padding: 12, height: "fit-content" }}>
         <h3>Annotation Comment</h3>
         {selectedAnn ? (
           <div>
-            <strong>Comment:</strong>
+            <strong>Page {selectedAnn.page}</strong>
             <p>{selectedAnn.text || "No comment provided"}</p>
           </div>
         ) : (
