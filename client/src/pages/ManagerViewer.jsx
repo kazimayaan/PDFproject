@@ -14,9 +14,11 @@ export default function ManagerViewer() {
   const [page, setPage] = useState(1);
   const [numPages, setNumPages] = useState(null);
   const [selectedAnn, setSelectedAnn] = useState(null);
+
   const containerRef = useRef(null);
 
   useEffect(() => {
+    // Fetch document metadata
     const fetchMeta = async () => {
       const res = await fetch(`${SERVER}/api/docs/${docId}`);
       if (!res.ok) {
@@ -28,6 +30,7 @@ export default function ManagerViewer() {
     };
     fetchMeta();
 
+    // Fetch annotations
     const fetchAnns = async () => {
       const res = await fetch(`${SERVER}/api/docs/${docId}/annotations`);
       if (!res.ok) return;
@@ -39,16 +42,22 @@ export default function ManagerViewer() {
 
   const handleSelectAnn = (ann) => {
     setSelectedAnn(ann);
-    setPage(ann.page); // navigate to the annotation's page
+    setPage(ann.page);
+  };
+
+  const getOrdinal = (n) => {
+    const s = ["th", "st", "nd", "rd"];
+    const v = n % 100;
+    return s[(v - 20) % 10] || s[v] || s[0];
   };
 
   return (
-    <div style={{ display: "flex", gap: 16 }}>
-      {/* Left: List of annotations */}
+    <div style={{ display: "flex", gap: 12 }}>
+      {/* Left: Comment list */}
       <div style={{ flex: 1, border: "1px solid #eee", borderRadius: 8, padding: 12, maxHeight: "90vh", overflowY: "auto" }}>
-        <h3>Annotations</h3>
+        <h3>Comments</h3>
         {anns.length === 0 && <p>No annotations</p>}
-        {anns.map((a) => (
+        {anns.map((a, index) => (
           <div
             key={a.id}
             onClick={() => handleSelectAnn(a)}
@@ -60,7 +69,7 @@ export default function ManagerViewer() {
               backgroundColor: selectedAnn?.id === a.id ? "#d0ebff" : "#f5f5f5",
             }}
           >
-            <strong>Page {a.page}</strong>
+            <strong>{`${index + 1}${getOrdinal(index + 1)} comment`}</strong>
             <p style={{ margin: "4px 0" }}>{a.text || "No comment"}</p>
           </div>
         ))}
@@ -75,12 +84,24 @@ export default function ManagerViewer() {
             {/* Toolbar */}
             <div className="toolbar" style={{ display: "flex", gap: 8, alignItems: "center" }}>
               <div style={{ fontWeight: 600 }}>{meta.originalName}</div>
-              <button className="navButons" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}>Prev</button>
+              <button
+                className="navButons"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+              >
+                Prev
+              </button>
               <div>Page {page}{numPages ? ` / ${numPages}` : ""}</div>
-              <button className="navButons" onClick={() => setPage((p) => Math.min(numPages || p + 1, p + 1))} disabled={!numPages || page >= numPages}>Next</button>
+              <button
+                className="navButons"
+                onClick={() => setPage((p) => Math.min(numPages || p + 1, p + 1))}
+                disabled={!numPages || page >= numPages}
+              >
+                Next
+              </button>
             </div>
 
-            {/* PDF */}
+            {/* PDF Container */}
             <div
               ref={containerRef}
               style={{
@@ -89,7 +110,7 @@ export default function ManagerViewer() {
                 border: "1px solid #eee",
                 borderRadius: 12,
                 overflow: "hidden",
-                marginTop: 12,
+                marginTop: 12
               }}
             >
               <Document
@@ -109,50 +130,46 @@ export default function ManagerViewer() {
               {/* Overlay annotations */}
               <div style={{ position: "absolute", inset: 0 }}>
                 {anns
-                  .filter((a) => a.page === page)
-                  .map((a) => {
-                    const isSelected = selectedAnn?.id === a.id;
-                    return (
-                      <div
-                        key={a.id}
-                        onClick={() => setSelectedAnn(a)}
-                        style={{
-                          position: "absolute",
-                          left: `${a.x * 100}%`,
-                          top: `${a.y * 100}%`,
-                          width: `${a.w * 100}%`,
-                          height: `${a.h * 100}%`,
-                          border: isSelected ? "3px solid blue" : "2px solid red",
-                          backgroundColor: "rgba(255,0,0,0.1)",
-                          padding: "2px",
-                          fontSize: "14px",
-                          overflow: "hidden",
-                          whiteSpace: "pre-wrap",
-                          boxSizing: "border-box",
-                          cursor: "pointer",
-                        }}
-                        title={a.text}
-                      >
-                        {a.text}
-                      </div>
-                    );
-                  })}
+                  .filter(a => a.page === page)
+                  .map(a => (
+                    <div
+                      key={a.id}
+                      style={{
+                        position: "absolute",
+                        left: `${a.x * 100}%`,
+                        top: `${a.y * 100}%`,
+                        width: `${a.w * 100}%`,
+                        height: `${a.h * 100}%`,
+                        border: selectedAnn?.id === a.id ? "3px solid blue" : "2px solid red",
+                        backgroundColor: "rgba(255,0,0,0.1)",
+                        padding: "2px",
+                        fontSize: "14px",
+                        overflow: "hidden",
+                        whiteSpace: "pre-wrap",
+                        boxSizing: "border-box",
+                        cursor: "pointer",
+                      }}
+                      onClick={() => handleSelectAnn(a)}
+                      title={a.text}
+                    >
+                      {a.text}
+                    </div>
+                  ))}
               </div>
             </div>
           </>
         )}
       </div>
 
-      {/* Right: Selected annotation details */}
-      <div style={{ flex: 1, border: "1px solid #eee", borderRadius: 8, padding: 12, height: "fit-content" }}>
-        <h3>Annotation Comment</h3>
+      {/* Right: Placeholder if needed for future comment details */}
+      <div style={{ flex: 1, border: "1px solid #eee", borderRadius: 8, padding: 12, minHeight: "90vh" }}>
         {selectedAnn ? (
-          <div>
-            <strong>Page {selectedAnn.page}</strong>
-            <p>{selectedAnn.text || "No comment provided"}</p>
-          </div>
+          <>
+            <h3>Selected Comment</h3>
+            <p>{selectedAnn.text || "No comment text"}</p>
+          </>
         ) : (
-          <p>Click an annotation to see its comment</p>
+          <p>Click a comment to see details here</p>
         )}
       </div>
     </div>
