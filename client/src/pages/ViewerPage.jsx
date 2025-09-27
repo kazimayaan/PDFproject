@@ -181,10 +181,7 @@ export default function ViewerPage() {
       {meta && (
         <>
           {/* Toolbar */}
-          <div
-            className="toolbar"
-            style={{ display: "flex", gap: 8, alignItems: "center" }}
-          >
+          <div className="toolbar" style={{ display: "flex", justifyContent: "space-between", }}>
             <div style={{ fontWeight: 600 }}>{meta.originalName}</div>
             <div className="navbuttonwrapper">
               <button

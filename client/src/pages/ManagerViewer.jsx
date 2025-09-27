@@ -56,8 +56,9 @@ export default function ManagerViewer() {
       {!meta && <div>Loading document…</div>}
       {meta && (
         <>
-          <div className="toolbar" style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <div style={{ fontWeight: 600 }}>{meta.originalName}</div>
+          <div className="toolbar" style={{ display: "flex", justifyContent: "space-between", }}>
+            <div  style={{ fontWeight: 600 }}>{meta.originalName}</div>
+            <div className="navgroup">
             <button
               className="navButons"
               onClick={() => setPage((p) => Math.max(1, p - 1))}
@@ -76,6 +77,7 @@ export default function ManagerViewer() {
             >
               Next
             </button>
+            </div>
           </div>
 
           {/* Main Content Row: PDF + Right Pane */}
