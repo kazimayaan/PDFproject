@@ -60,7 +60,7 @@ export default function ManagerViewer() {
             <div  style={{ fontWeight: 600 }}>{meta.originalName}</div>
             <div className="navgroup">
             <button
-              className="navButons"
+              className="button-50"
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
             >
@@ -71,7 +71,7 @@ export default function ManagerViewer() {
               {numPages ? ` / ${numPages}` : ""}
             </div>
             <button
-              className="navButons"
+              className="button-50"
               onClick={() => setPage((p) => Math.min(numPages || p + 1, p + 1))}
               disabled={!numPages || page >= numPages}
             >
@@ -156,7 +156,7 @@ export default function ManagerViewer() {
               >
                 {selectedAnn ? (
                   <>
-                    <strong>Selected Comment:</strong>
+                    <strong className="Comment" style={{display:"flex", justifyContent:"center"}}>Selected Comment:</strong>
                     <p style={{ marginTop: 4 }}>{selectedAnn.text || "No comment"}</p>
                   </>
                 ) : (
@@ -169,23 +169,27 @@ export default function ManagerViewer() {
                 style={{
                   flex: 1,
                   border: "1px solid #ddd",
-                  borderRadius: 8,
+                  borderRadius: 3,
                   padding: 8,
                   overflowY: "auto",
                 }}
               >
-                <h4>All Annotations</h4>
+                <h4 style={{display:"flex",justifyContent:"center"}}>All Annotations</h4>
                 {anns.length === 0 && <p>No annotations</p>}
                 {anns.map((a, index) => (
-                  <div
+                  <div 
                     key={a.id}
                     onClick={() => handleSelectAnn(a)}
                     style={{
-                      padding: "6px 8px",
+                      display:"flex",
+                      justifyContent:"center",
+                      padding:"10px 5px",
+                      // padding: "6px 8px",
                       marginBottom: 4,
-                      borderRadius: 4,
+                      borderRadius: 2,
                       cursor: "pointer",
                       backgroundColor: selectedAnn?.id === a.id ? "#d0ebff" : "#f5f5f5",
+                      
                     }}
                   >
                     <strong>{`${index + 1}${getOrdinal(index + 1)} comment`}</strong>

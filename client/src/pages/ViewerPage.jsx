@@ -183,7 +183,7 @@ export default function ViewerPage() {
           {/* Toolbar */}
           <div className="toolbar" style={{ display: "flex", justifyContent: "space-between", }}>
             <div style={{ fontWeight: 600 }}>{meta.originalName}</div>
-            <div className="navbuttonwrapper">
+            {/* <div className="navbuttonwrapper"> */}
               <button
                 className="navButons"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
@@ -204,7 +204,7 @@ export default function ViewerPage() {
               >
                 Next
               </button>
-            </div>
+            {/* </div> */}
             <div
               className="UtilityButtons"
               style={{ marginLeft: "auto", display: "flex", gap: 8 }}
