@@ -122,7 +122,7 @@ export default function ManagerViewer() {
                           width: `${a.w * 100}%`,
                           height: `${a.h * 100}%`,
                           border: selectedAnn?.id === a.id ? "3px solid blue" : "2px solid red",
-                          backgroundColor: "rgba(255,0,0,0.1)",
+                          backgroundColor:selectedAnn?.id === a.id ? "rgba(0, 47, 255, 0.1)": "rgba(255,0,0,0.1)",
                           padding: "2px",
                           fontSize: "14px",
                           overflow: "hidden",
