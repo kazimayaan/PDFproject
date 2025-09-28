@@ -87,10 +87,10 @@ export default function AdminPage() {
                 <td style={{ borderBottom: "1px solid #eee", padding: 8 }}>{pdf.author_name}</td>
                 <td style={{ borderBottom: "1px solid #eee", padding: 8 }}>{pdf.author_message}</td>
                 <td style={{ borderBottom: "1px solid #eee", padding: 8, display: "flex", gap: 8 }}>
-                  <Link className="btn" to={`/manager/${pdf.doc_id}`}>
+                  <Link className="btn button-50" to={`/manager/${pdf.doc_id}`}>
                     Open Manager
                   </Link>
-                  <a className="btn" href={pdf.cloud_url} target="_blank" rel="noopener noreferrer">
+                  <a className="btn button-50" href={pdf.cloud_url} target="_blank" rel="noopener noreferrer">
                     Download PDF
                   </a>
                 </td>

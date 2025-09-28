@@ -182,10 +182,11 @@ export default function ViewerPage() {
         <>
           {/* Toolbar */}
           <div className="toolbar" style={{ display: "flex", justifyContent: "space-between", }}>
+            <div className="tooldbarjr" style={{ display: "flex", alignItems:"center",}}>
             <div style={{ fontWeight: 600 }}>{meta.originalName}</div>
-            {/* <div className="navbuttonwrapper"> */}
+          <div className="navbuttonwrapper" style={{margin: "auto", display:"flex", alignitems:"center", gap:"15px" }}> 
               <button
-                className="navButons"
+                className="button-50"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
               >
@@ -196,7 +197,7 @@ export default function ViewerPage() {
                 {numPages ? ` / ${numPages}` : ""}
               </div>
               <button
-                className="navButons"
+                className="button-50"
                 onClick={() =>
                   setPage((p) => Math.min(numPages || p + 1, p + 1))
                 }
@@ -204,20 +205,21 @@ export default function ViewerPage() {
               >
                 Next
               </button>
-            {/* </div> */}
+             </div> 
+             </div>
             <div
               className="UtilityButtons"
               style={{ marginLeft: "auto", display: "flex", gap: 8 }}
             >
               <button
                 className={
-                  mode === "annotate" ? "btn-active annotateButton" : "annotateButton"
+                  mode === "annotate" ? "btn-active button-40" : "button-30"
                 }
                 onClick={() => setMode(mode === "annotate" ? "view" : "annotate")}
               >
                 {mode === "annotate" ? "Cancel" : "Add Annotation"}
               </button>
-              <button className="submitButton" onClick={handleSubmit}>
+              <button className="button-40" onClick={handleSubmit}>
                 Submit
               </button>
             </div>
