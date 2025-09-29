@@ -53,6 +53,12 @@ export default function AdminPage() {
     setFilteredPdfs(filtered);
   };
 
+  // Copy Doc ID
+  const copyDocId = (docId) => {
+    navigator.clipboard.writeText(docId);
+    alert(`Doc ID "${docId}" copied to clipboard!`);
+  };
+
   return (
     <div style={{ maxWidth: 900, margin: "0 auto", padding: 16 }}>
       <h2>Admin Page - All PDFs</h2>
@@ -90,9 +96,21 @@ export default function AdminPage() {
                   <Link className="btn button-50" to={`/manager/${pdf.doc_id}`}>
                     Open Manager
                   </Link>
-                  <a className="btn button-50" href={pdf.cloud_url} target="_blank" rel="noopener noreferrer">
+                  <a
+                    className="btn button-50"
+                    href={pdf.cloud_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     Download PDF
                   </a>
+                  <button
+                    className="btn button-50" style={{display:"flex", alignItems:"center",justifyContent:"center"
+                    }}
+                    onClick={() => copyDocId(pdf.doc_id)}
+                  >
+                  <img style={{height:"20px"}} src="https://res.cloudinary.com/dq2dvsmus/image/upload/v1759158686/Pngtree_vector_copy_icon_4015607_hw2wfq.png"></img> Doc ID
+                  </button>
                 </td>
               </tr>
             ))}
