@@ -37,8 +37,15 @@ export default function UploadPage() {
     navigate(`/doc/${existingDocId.trim()}`)
   }
 
+  const copyDocId = () => {
+    if (result?.docId) {
+      navigator.clipboard.writeText(result.docId)
+      alert("Doc ID copied to clipboard!")
+    }
+  }
+
   return (
-    <div className="card uploadpagecard" >
+    <div className="card uploadpagecard">
       <h2 style={{ marginTop: 0 }}>Upload a PDF</h2>
 
       {/* Section: Upload new PDF */}
@@ -74,7 +81,17 @@ export default function UploadPage() {
         <div style={{ marginTop: 16 }}>
           <div>Uploaded: <b>{result.originalName}</b></div>
           <div>File URL: <a className="link" href={result.url} target="_blank">{result.url}</a></div>
-          <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+
+          {/* Doc ID section */}
+          <div style={{ marginTop: 12, padding: 10, border: "1px solid #eee", borderRadius: 6, backgroundColor: "#fafafa" }}>
+            <div><strong>Doc ID:</strong> {result.docId}</div>
+            <p style={{ margin: "6px 0", color: "#555" }}>
+              Please note the Doc ID for future references.
+            </p>
+            <button className="button-50" onClick={copyDocId}>Copy Doc ID</button>
+          </div>
+
+          <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
             <Link className="button-50" to={`/doc/${result.docId}`}>Open Viewer</Link>
             <Link className="button-50" to={`/manager/${result.docId}`}>Open Manager</Link>
           </div>
