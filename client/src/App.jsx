@@ -12,7 +12,7 @@ export default function App() {
         {/* <Link to="/" style={{fontWeight: 700, textDecoration: 'none', color: '#111' }}>EManuscript Annotation tool</Link> */}
         {/* <span style={{ fontSize: 12, color: '#777' }}>upload & annotate </span> */}
         <a href="https://emanuscriptonline.com/index.php/index" class="is_img"><a href="https://emanuscriptonline.com/index.php/index" className="is_img">
-  <img src="https://emanuscriptonline.com/public/site/pageHeaderTitleImage_en_US.png" alt="Logo" style={{ height: "40px" }} />
+  <img src="https://res.cloudinary.com/dq2dvsmus/image/upload/v1759153817/c12d3e01-6840-4e52-8292-4bd640e8682e.png" alt="Logo" style={{ height: "40px" }} />
 </a></a>
       </header>
       <main style={{ padding: 16, maxWidth: 960, margin: '0 auto' }}>
