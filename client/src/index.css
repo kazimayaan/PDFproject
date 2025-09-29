@@ -2,7 +2,7 @@ html, body, #root { height: 100%; margin: 0; }
 * { box-sizing: border-box; }
 .btn {
   appearance: none; border: 1px solid #ddd; background: #111; color: #fff;
-  padding: 8px 12px; border-radius: 10px; cursor: pointer; font-weight: 600;
+  padding: 8px 10px; border-radius:3px; cursor: pointer; font-weight: 600; margin:auto !important, 
 }
 .btn:disabled { opacity: .6; cursor: not-allowed; }
 .card { border: 1px solid #eee; border-radius: 14px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.04);}

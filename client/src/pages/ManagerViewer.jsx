@@ -14,6 +14,7 @@ export default function ManagerViewer() {
   const [page, setPage] = useState(1);
   const [numPages, setNumPages] = useState(null);
   const [selectedAnn, setSelectedAnn] = useState(null);
+  const [hiddenAnnIds, setHiddenAnnIds] = useState([]); // track hidden annotations
 
   const containerRef = useRef(null);
 
@@ -43,6 +44,14 @@ export default function ManagerViewer() {
     setPage(ann.page);
   };
 
+  const toggleAnnotationVisibility = (annId) => {
+    setHiddenAnnIds((prev) =>
+      prev.includes(annId)
+        ? prev.filter((id) => id !== annId) // unhide
+        : [...prev, annId] // hide
+    );
+  };
+
   const getOrdinal = (n) => {
     const s = ["th", "st", "nd", "rd"];
     const v = n % 100;
@@ -56,27 +65,32 @@ export default function ManagerViewer() {
       {!meta && <div>Loading document…</div>}
       {meta && (
         <>
-          <div className="toolbar" style={{ display: "flex", justifyContent: "space-between", }}>
-            <div  style={{ fontWeight: 600 }}>{meta.originalName}</div>
+          <div
+            className="toolbar"
+            style={{ display: "flex", justifyContent: "space-between" }}
+          >
+            <div style={{ fontWeight: 600 }}>{meta.originalName}</div>
             <div className="navgroup">
-            <button
-              className="button-50"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page <= 1}
-            >
-              Prev
-            </button>
-            <div>
-              Page {page}
-              {numPages ? ` / ${numPages}` : ""}
-            </div>
-            <button
-              className="button-50"
-              onClick={() => setPage((p) => Math.min(numPages || p + 1, p + 1))}
-              disabled={!numPages || page >= numPages}
-            >
-              Next
-            </button>
+              <button
+                className="button-50"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+              >
+                Prev
+              </button>
+              <div>
+                Page {page}
+                {numPages ? ` / ${numPages}` : ""}
+              </div>
+              <button
+                className="button-50"
+                onClick={() =>
+                  setPage((p) => Math.min(numPages || p + 1, p + 1))
+                }
+                disabled={!numPages || page >= numPages}
+              >
+                Next
+              </button>
             </div>
           </div>
 
@@ -98,7 +112,11 @@ export default function ManagerViewer() {
                   file={meta.cloudUrl}
                   onLoadSuccess={({ numPages }) => setNumPages(numPages)}
                   loading={<div style={{ padding: 24 }}>Loading PDF…</div>}
-                  error={<div style={{ padding: 24, color: "#c00" }}>Failed to load PDF</div>}
+                  error={
+                    <div style={{ padding: 24, color: "#c00" }}>
+                      Failed to load PDF
+                    </div>
+                  }
                 >
                   <Page
                     pageNumber={page}
@@ -112,6 +130,7 @@ export default function ManagerViewer() {
                 <div style={{ position: "absolute", inset: 0 }}>
                   {anns
                     .filter((a) => a.page === page)
+                    .filter((a) => !hiddenAnnIds.includes(a.id)) // hide only specific ones
                     .map((a) => (
                       <div
                         key={a.id}
@@ -121,8 +140,14 @@ export default function ManagerViewer() {
                           top: `${a.y * 100}%`,
                           width: `${a.w * 100}%`,
                           height: `${a.h * 100}%`,
-                          border: selectedAnn?.id === a.id ? "3px solid blue" : "2px solid red",
-                          backgroundColor:selectedAnn?.id === a.id ? "rgba(0, 47, 255, 0.1)": "rgba(255,0,0,0.1)",
+                          border:
+                            selectedAnn?.id === a.id
+                              ? "3px solid blue"
+                              : "2px solid red",
+                          backgroundColor:
+                            selectedAnn?.id === a.id
+                              ? "rgba(0, 47, 255, 0.1)"
+                              : "rgba(255,0,0,0.1)",
                           padding: "2px",
                           fontSize: "14px",
                           overflow: "hidden",
@@ -152,12 +177,30 @@ export default function ManagerViewer() {
                   marginBottom: 12,
                   backgroundColor: "#f9f9f9",
                   overflowY: "auto",
+                  display: "flex",
+                  flexDirection:"column"
                 }}
               >
                 {selectedAnn ? (
                   <>
-                    <strong className="Comment" style={{display:"flex", justifyContent:"center"}}>Selected Comment:</strong>
-                    <p style={{ marginTop: 4 }}>{selectedAnn.text || "No comment"}</p>
+                    <strong
+                      className="Comment"
+                      style={{ display: "flex", justifyContent: "center" }}
+                    >
+                      Selected Comment:
+                    </strong>
+                    <p style={{ marginTop: 4 }}>
+                      {selectedAnn.text || "No comment"}
+                    </p>
+                    <button
+                      className="btn"
+                      style={{ margin: "auto" }}
+                      onClick={() => toggleAnnotationVisibility(selectedAnn.id)}
+                    >
+                      {hiddenAnnIds.includes(selectedAnn.id)
+                        ? "Unhide Annotation"
+                        : "Hide Annotation"}
+                    </button>
                   </>
                 ) : (
                   <p>Select an annotation to view comment</p>
@@ -174,22 +217,23 @@ export default function ManagerViewer() {
                   overflowY: "auto",
                 }}
               >
-                <h4 style={{display:"flex",justifyContent:"center"}}>All Annotations</h4>
+                <h4 style={{ display: "flex", justifyContent: "center" }}>
+                  All Annotations
+                </h4>
                 {anns.length === 0 && <p>No annotations</p>}
                 {anns.map((a, index) => (
-                  <div 
+                  <div
                     key={a.id}
                     onClick={() => handleSelectAnn(a)}
                     style={{
-                      display:"flex",
-                      justifyContent:"center",
-                      padding:"10px 5px",
-                      // padding: "6px 8px",
+                      display: "flex",
+                      justifyContent: "center",
+                      padding: "10px 5px",
                       marginBottom: 4,
                       borderRadius: 2,
                       cursor: "pointer",
-                      backgroundColor: selectedAnn?.id === a.id ? "#d0ebff" : "#f5f5f5",
-                      
+                      backgroundColor:
+                        selectedAnn?.id === a.id ? "#d0ebff" : "#f5f5f5",
                     }}
                   >
                     <strong>{`${index + 1}${getOrdinal(index + 1)} comment`}</strong>
