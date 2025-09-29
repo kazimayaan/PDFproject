@@ -38,7 +38,7 @@ export default function UploadPage() {
   }
 
   return (
-    <div className="card">
+    <div className="card uploadpagecard" >
       <h2 style={{ marginTop: 0 }}>Upload a PDF</h2>
 
       {/* Section: Upload new PDF */}
@@ -60,7 +60,7 @@ export default function UploadPage() {
       </div>
       <div style={{ display:'flex', gap:12, alignItems:'center' }}>
         <input
-          className="input"
+          className="input fileinputbutton"
           type="file"
           accept="application/pdf"
           onChange={e => setFile(e.target.files?.[0] ?? null)}
