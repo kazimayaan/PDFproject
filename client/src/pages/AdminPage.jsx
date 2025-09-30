@@ -13,6 +13,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
+  const [copiedId, setCopiedId] = useState(null); // ✅ Track copied docId
 
   useEffect(() => {
     async function fetchPDFs() {
@@ -54,9 +55,14 @@ export default function AdminPage() {
   };
 
   // Copy Doc ID
-  const copyDocId = (docId) => {
-    navigator.clipboard.writeText(docId);
-    alert(`Doc ID "${docId}" copied to clipboard!`);
+  const copyDocId = async (docId) => {
+    try {
+      await navigator.clipboard.writeText(docId);
+      setCopiedId(docId); // ✅ Mark this docId as copied
+      setTimeout(() => setCopiedId(null), 2000); // Reset after 2s
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
   };
 
   return (
@@ -80,19 +86,58 @@ export default function AdminPage() {
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr>
-              <th style={{ borderBottom: "1px solid #ccc", textAlign: "left", padding: 8 }}>PDF Name</th>
-              <th style={{ borderBottom: "1px solid #ccc", textAlign: "left", padding: 8 }}>Author</th>
-              <th style={{ borderBottom: "1px solid #ccc", textAlign: "left", padding: 8 }}>Message</th>
-              <th style={{ borderBottom: "1px solid #ccc", padding: 8 }}>Actions</th>
+              <th
+                style={{
+                  borderBottom: "1px solid #ccc",
+                  textAlign: "left",
+                  padding: 8,
+                }}
+              >
+                PDF Name
+              </th>
+              <th
+                style={{
+                  borderBottom: "1px solid #ccc",
+                  textAlign: "left",
+                  padding: 8,
+                }}
+              >
+                Author
+              </th>
+              <th
+                style={{
+                  borderBottom: "1px solid #ccc",
+                  textAlign: "left",
+                  padding: 8,
+                }}
+              >
+                Message
+              </th>
+              <th style={{ borderBottom: "1px solid #ccc", padding: 8 }}>
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody>
             {filteredPdfs.map((pdf) => (
               <tr key={pdf.doc_id}>
-                <td style={{ borderBottom: "1px solid #eee", padding: 8 }}>{pdf.pdf_name}</td>
-                <td style={{ borderBottom: "1px solid #eee", padding: 8 }}>{pdf.author_name}</td>
-                <td style={{ borderBottom: "1px solid #eee", padding: 8 }}>{pdf.author_message}</td>
-                <td style={{ borderBottom: "1px solid #eee", padding: 8, display: "flex", gap: 8 }}>
+                <td style={{ borderBottom: "1px solid #eee", padding: 8 }}>
+                  {pdf.pdf_name}
+                </td>
+                <td style={{ borderBottom: "1px solid #eee", padding: 8 }}>
+                  {pdf.author_name}
+                </td>
+                <td style={{ borderBottom: "1px solid #eee", padding: 8 }}>
+                  {pdf.author_message}
+                </td>
+                <td
+                  style={{
+                    borderBottom: "1px solid #eee",
+                    padding: 8,
+                    display: "flex",
+                    gap: 8,
+                  }}
+                >
                   <Link className="btn button-50" to={`/manager/${pdf.doc_id}`}>
                     Open Manager
                   </Link>
@@ -105,11 +150,30 @@ export default function AdminPage() {
                     Download PDF
                   </a>
                   <button
-                    className="btn button-50" style={{display:"flex", alignItems:"center",justifyContent:"center"
+                    className="btn button-50"
+                    style={{
+                      backgroundColor:
+                        copiedId === pdf.doc_id ? "#28a745" : "#0964b0",
+                      color: copiedId === pdf.doc_id ? "#fff" : "#fff",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      transition: "background-color 0.3s ease",
                     }}
                     onClick={() => copyDocId(pdf.doc_id)}
                   >
-                  <img style={{height:"20px"}} src="https://res.cloudinary.com/dq2dvsmus/image/upload/v1759158686/Pngtree_vector_copy_icon_4015607_hw2wfq.png"></img> Doc ID
+                    {copiedId === pdf.doc_id ? (
+                      "Copied!"
+                    ) : (
+                      <>
+                        <img
+                          style={{ height: "20px", marginRight: "6px" }}
+                          src="https://res.cloudinary.com/dq2dvsmus/image/upload/v1759158686/Pngtree_vector_copy_icon_4015607_hw2wfq.png"
+                          alt="copy"
+                        />
+                        Doc ID
+                      </>
+                    )}
                   </button>
                 </td>
               </tr>

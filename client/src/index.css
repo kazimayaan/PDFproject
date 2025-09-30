@@ -99,6 +99,7 @@ button{
 
 /* CSS */
 .button-50 {
+  text-decoration: none;
   appearance: button;
   background-color: #000;
   background-image: none;

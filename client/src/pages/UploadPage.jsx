@@ -8,6 +8,7 @@ export default function UploadPage() {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
   const [existingDocId, setExistingDocId] = useState("")
+  const [copied, setCopied] = useState(false)   // track copy state
   const SERVER = import.meta.env.VITE_SERVER_URL
   const navigate = useNavigate()
 
@@ -24,6 +25,7 @@ export default function UploadPage() {
       if (!res.ok) throw new Error('Upload failed')
       const json = await res.json()
       setResult(json)
+      setCopied(false) // reset copied state when new doc is uploaded
     } catch (e) {
       console.error(e)
       alert(e.message || 'Error uploading')
@@ -40,7 +42,8 @@ export default function UploadPage() {
   const copyDocId = () => {
     if (result?.docId) {
       navigator.clipboard.writeText(result.docId)
-      alert("Doc ID copied to clipboard!")
+      setCopied(true)   // change button state
+      setTimeout(() => setCopied(false), 2000) // revert back after 2s
     }
   }
 
@@ -88,7 +91,16 @@ export default function UploadPage() {
             <p style={{ margin: "6px 0", color: "#555" }}>
               Please note the Doc ID for future references.
             </p>
-            <button className="button-50" style={{backgroundColor:"#0964b0"}} onClick={copyDocId}>Copy Doc ID</button>
+            <button
+              className="button-50"
+              style={{
+                backgroundColor: copied ? "#28a745" : "#0964b0", // green when copied
+                transition: "background-color 0.3s"
+              }}
+              onClick={copyDocId}
+            >
+              {copied ? "Copied!" : "Copy Doc ID"}
+            </button>
           </div>
 
           <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
@@ -98,7 +110,7 @@ export default function UploadPage() {
         </div>
       )}
 
-      {/* Section: Go to existing doc (moved below upload section) */}
+      {/* Section: Go to existing doc */}
       <div style={{ marginTop: 24, borderTop: '1px solid #eee', paddingTop: 12 }}>
         <h4>Open Existing Document</h4>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
