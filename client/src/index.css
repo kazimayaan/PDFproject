@@ -290,7 +290,7 @@ input[type="file"]::after {
   position: absolute;
   pointer-events: none;
   top: 16px;
-  left: 50px;
+  left: 41px;
   color: #0964b0;
   content: "Upload File";
 }

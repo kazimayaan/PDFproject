@@ -183,7 +183,7 @@ export default function ViewerPage() {
           {/* Toolbar */}
           <div className="toolbar" style={{ display: "flex", justifyContent: "space-between", }}>
             <div className="tooldbarjr" style={{ display: "flex", alignItems:"center",}}>
-            <div style={{ fontWeight: 600 }}>{meta.originalName}</div>
+            <div style={{ fontWeight: 600 , width:"13vw" }}>{meta.originalName}</div>
           <div className="navbuttonwrapper" style={{margin: "auto", display:"flex", alignitems:"center", gap:"15px" }}> 
               <button
                 className="button-50"

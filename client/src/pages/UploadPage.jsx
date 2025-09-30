@@ -88,7 +88,7 @@ export default function UploadPage() {
             <p style={{ margin: "6px 0", color: "#555" }}>
               Please note the Doc ID for future references.
             </p>
-            <button className="button-50" onClick={copyDocId}>Copy Doc ID</button>
+            <button className="button-50" style={{backgroundColor:"#0964b0"}} onClick={copyDocId}>Copy Doc ID</button>
           </div>
 
           <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
