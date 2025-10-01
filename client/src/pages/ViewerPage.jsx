@@ -47,7 +47,9 @@ export default function ViewerPage() {
       const data = await res.json();
       if (alive) setAnns(data);
     })();
-    return () => { alive = false };
+    return () => {
+      alive = false;
+    };
   }, [SERVER, docId, meta]);
 
   // --- Annotation logic ---
@@ -181,41 +183,57 @@ export default function ViewerPage() {
       {meta && (
         <>
           {/* Toolbar */}
-          <div className="toolbar" style={{ display: "flex", justifyContent: "space-between", }}>
-            <div className="tooldbarjr" style={{ display: "flex", alignItems:"center",}}>
-            <div style={{ fontWeight: 600 , width:"13vw" }}>{meta.originalName}</div>
-          <div className="navbuttonwrapper" style={{margin: "auto", display:"flex", alignitems:"center", gap:"15px" }}> 
-              <button
-                className="button-50"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page <= 1}
-              >
-                Prev
-              </button>
-              <div className="pagesNumber">
-                Page {page}
-                {numPages ? ` / ${numPages}` : ""}
+          <div
+            className="toolbar"
+            style={{ display: "flex", justifyContent: "space-between" }}
+          >
+            <div
+              className="tooldbarjr"
+              style={{ display: "flex", alignItems: "center" }}
+            >
+              <div style={{ fontWeight: 600, width: "13vw" }}>
+                {meta.originalName}
               </div>
-              <button
-                className="button-50"
-                onClick={() =>
-                  setPage((p) => Math.min(numPages || p + 1, p + 1))
-                }
-                disabled={!numPages || page >= numPages}
+              <div
+                className="navbuttonwrapper"
+                style={{
+                  margin: "auto",
+                  display: "flex",
+                  alignitems: "center",
+                  gap: "15px",
+                }}
               >
-                Next
-              </button>
-             </div> 
-             </div>
+                <button
+                  className="button-50"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                >
+                  Prev
+                </button>
+                <div className="pagesNumber">
+                  Page {page}
+                  {numPages ? ` / ${numPages}` : ""}
+                </div>
+                <button
+                  className="button-50"
+                  onClick={() =>
+                    setPage((p) => Math.min(numPages || p + 1, p + 1))
+                  }
+                  disabled={!numPages || page >= numPages}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
             <div
               className="UtilityButtons"
               style={{ marginLeft: "auto", display: "flex", gap: 8 }}
             >
               <button
-                className={
-                  mode === "annotate" ? "btn-active button-40" : "button-30"
+                className={mode === "annotate" ? "btn-active button-40" : "button-30"}
+                onClick={() =>
+                  setMode(mode === "annotate" ? "view" : "annotate")
                 }
-                onClick={() => setMode(mode === "annotate" ? "view" : "annotate")}
               >
                 {mode === "annotate" ? "Cancel" : "Add Annotation"}
               </button>
@@ -248,7 +266,11 @@ export default function ViewerPage() {
               file={meta.cloudUrl}
               onLoadSuccess={({ numPages }) => setNumPages(numPages)}
               loading={<div style={{ padding: 24 }}>Loading PDF…</div>}
-              error={<div style={{ padding: 24, color: "#c00" }}>Failed to load PDF</div>}
+              error={
+                <div style={{ padding: 24, color: "#c00" }}>
+                  Failed to load PDF
+                </div>
+              }
             >
               <Page
                 pageNumber={page}
@@ -286,6 +308,7 @@ export default function ViewerPage() {
                   ) : (
                     <div
                       key={a.id}
+                      className="annotation-box"
                       style={{
                         position: "absolute",
                         left: `${a.x * 100}%`,
@@ -305,33 +328,35 @@ export default function ViewerPage() {
                       onDoubleClick={() =>
                         setAnns((prev) =>
                           prev.map((ann) =>
-                            ann.id === a.id ? { ...ann, editing: true } : ann
+                            ann.id === a.id
+                              ? { ...ann, editing: true }
+                              : ann
                           )
                         )
                       }
                     >
                       {a.text}
 
-
-
-{/* Delete button */}
-  {/* Delete Button as Image */}
-  <img
-    src="https://www.pngfind.com/pngs/m/3-31254_red-cross-mark-clipart-black-background-red-x.png"
-    alt="Delete"
-    onClick={() =>
-      setAnns((prev) => prev.filter((ann) => ann.id !== a.id))
-    }
-    style={{
-      position: "absolute",
-      top: "0px",
-      right: "0px",
-      width: "20px",
-      height: "19px",
-      cursor: "pointer",
-      zIndex: 10,
-    }}
-  />
+                      {/* Delete Button (hidden until hover) */}
+                      <img
+                        src="https://res.cloudinary.com/dq2dvsmus/image/upload/v1759349192/cf0f9696abaaf8f4bfc31589784cb061_qnjwxw.png"
+                        alt="Delete"
+                        onClick={() =>
+                          setAnns((prev) =>
+                            prev.filter((ann) => ann.id !== a.id)
+                          )
+                        }
+                        className="delete-btn"
+                        style={{
+                          position: "absolute",
+                          top: "0px",
+                          right: "0px",
+                          width: "20px",
+                          height: "19px",
+                          cursor: "pointer",
+                          display: "none", // hidden by default
+                        }}
+                      />
 
                       {/* Resize handle */}
                       <div
@@ -369,6 +394,15 @@ export default function ViewerPage() {
           </div>
         </>
       )}
+
+      {/* CSS for hover effect */}
+      <style>
+        {`
+          .annotation-box:hover .delete-btn {
+            display: block !important;
+          }
+        `}
+      </style>
     </div>
   );
 }
