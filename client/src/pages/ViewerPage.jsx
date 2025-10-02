@@ -15,7 +15,7 @@ export default function ViewerPage() {
   const [anns, setAnns] = useState([]);
   const containerRef = useRef(null);
 
-  const [mode, setMode] = useState("view"); // "view" | "annotate"
+  const [mode, setMode] = useState("view"); // "view" | "annotate" | "highlight"
   const [dragStart, setDragStart] = useState(null);
   const [dragCurrent, setDragCurrent] = useState(null);
   const [dragging, setDragging] = useState(null);
@@ -52,9 +52,9 @@ export default function ViewerPage() {
     };
   }, [SERVER, docId, meta]);
 
-  // --- Annotation logic ---
+  // --- Annotation/Highlight logic ---
   const handleMouseDown = (e) => {
-    if (mode !== "annotate") return;
+    if (mode === "view") return;
     const el = containerRef.current;
     if (!el) return;
     const r = el.getBoundingClientRect();
@@ -95,7 +95,7 @@ export default function ViewerPage() {
           return a;
         })
       );
-    } else if (mode === "annotate" && dragStart) {
+    } else if ((mode === "annotate" || mode === "highlight") && dragStart) {
       const el = containerRef.current;
       if (!el) return;
       const r = el.getBoundingClientRect();
@@ -106,16 +106,17 @@ export default function ViewerPage() {
   };
 
   const handleMouseUp = () => {
-    if (mode === "annotate" && dragStart && dragCurrent) {
+    if ((mode === "annotate" || mode === "highlight") && dragStart && dragCurrent) {
       const ann = {
         id: Date.now(),
         page,
+        type: mode, // "annotate" or "highlight"
         x: Math.min(dragStart.x, dragCurrent.x),
         y: Math.min(dragStart.y, dragCurrent.y),
         w: Math.abs(dragCurrent.x - dragStart.x),
         h: Math.abs(dragCurrent.y - dragStart.y),
-        text: "",
-        editing: true,
+        text: mode === "annotate" ? "" : null,
+        editing: mode === "annotate",
       };
       setAnns((prev) => [...prev, ann]);
       setMode("view");
@@ -150,6 +151,10 @@ export default function ViewerPage() {
       origX: ann.x,
       origY: ann.y,
     });
+  };
+
+  const deleteAnnotation = (id) => {
+    setAnns((prev) => prev.filter((a) => a.id !== id));
   };
 
   // Submit annotations to backend
@@ -237,6 +242,14 @@ export default function ViewerPage() {
               >
                 {mode === "annotate" ? "Cancel" : "Add Annotation"}
               </button>
+              <button
+                className={mode === "highlight" ? "btn-active button-40" : "button-30"}
+                onClick={() =>
+                  setMode(mode === "highlight" ? "view" : "highlight")
+                }
+              >
+                {mode === "highlight" ? "Cancel" : "Add Highlight"}
+              </button>
               <button className="button-40" onClick={handleSubmit}>
                 Submit
               </button>
@@ -246,6 +259,8 @@ export default function ViewerPage() {
           <p className="hintforuser">
             {mode === "annotate"
               ? "Drag on the PDF to draw a box for your comment."
+              : mode === "highlight"
+              ? "Drag on the PDF to add a highlight."
               : "Double-click a box to edit text, or hover to delete."}
           </p>
 
@@ -259,7 +274,7 @@ export default function ViewerPage() {
               border: "1px solid #eee",
               borderRadius: 12,
               overflow: "hidden",
-              cursor: mode === "annotate" ? "crosshair" : "default",
+              cursor: mode !== "view" ? "crosshair" : "default",
             }}
           >
             <Document
@@ -280,12 +295,44 @@ export default function ViewerPage() {
               />
             </Document>
 
-            {/* Annotations */}
+            {/* Annotations & Highlights */}
             <div style={{ position: "absolute", inset: 0 }}>
               {anns
                 .filter((a) => a.page === page)
                 .map((a) =>
-                  a.editing ? (
+                  a.type === "highlight" ? (
+                    <div
+                      key={a.id}
+                      className="highlight-box"
+                      style={{
+                        position: "absolute",
+                        left: `${a.x * 100}%`,
+                        top: `${a.y * 100}%`,
+                        width: `${a.w * 100}%`,
+                        height: `${a.h * 100}%`,
+                        backgroundColor: "rgba(255,255,0,0.4)",
+                        border: "1px solid #eab308",
+                        borderRadius: 3,
+                      }}
+                    >
+                      {/* Delete button */}
+                      <img
+                        src="https://res.cloudinary.com/dq2dvsmus/image/upload/v1759349192/cf0f9696abaaf8f4bfc31589784cb061_qnjwxw.png"
+                        alt="Delete"
+                        onClick={() => deleteAnnotation(a.id)}
+                        className="delete-btn"
+                        style={{
+                          position: "absolute",
+                          top: "0px",
+                          right: "0px",
+                          width: "20px",
+                          height: "19px",
+                          cursor: "pointer",
+                          display: "none",
+                        }}
+                      />
+                    </div>
+                  ) : a.editing ? (
                     <textarea
                       key={a.id}
                       style={{
@@ -337,15 +384,11 @@ export default function ViewerPage() {
                     >
                       {a.text}
 
-                      {/* Delete Button (hidden until hover) */}
+                      {/* Delete Button */}
                       <img
                         src="https://res.cloudinary.com/dq2dvsmus/image/upload/v1759349192/cf0f9696abaaf8f4bfc31589784cb061_qnjwxw.png"
                         alt="Delete"
-                        onClick={() =>
-                          setAnns((prev) =>
-                            prev.filter((ann) => ann.id !== a.id)
-                          )
-                        }
+                        onClick={() => deleteAnnotation(a.id)}
                         className="delete-btn"
                         style={{
                           position: "absolute",
@@ -354,7 +397,7 @@ export default function ViewerPage() {
                           width: "20px",
                           height: "19px",
                           cursor: "pointer",
-                          display: "none", // hidden by default
+                          display: "none",
                         }}
                       />
 
@@ -384,8 +427,8 @@ export default function ViewerPage() {
                     top: `${Math.min(dragStart.y, dragCurrent.y) * 100}%`,
                     width: `${Math.abs(dragCurrent.x - dragStart.x) * 100}%`,
                     height: `${Math.abs(dragCurrent.y - dragStart.y) * 100}%`,
-                    border: "2px dashed blue",
-                    backgroundColor: "rgba(0,0,255,0.05)",
+                    border: mode === "highlight" ? "2px dashed orange" : "2px dashed blue",
+                    backgroundColor: mode === "highlight" ? "rgba(255,200,0,0.2)" : "rgba(0,0,255,0.05)",
                     pointerEvents: "none",
                   }}
                 />
@@ -398,7 +441,8 @@ export default function ViewerPage() {
       {/* CSS for hover effect */}
       <style>
         {`
-          .annotation-box:hover .delete-btn {
+          .annotation-box:hover .delete-btn,
+          .highlight-box:hover .delete-btn {
             display: block !important;
           }
         `}

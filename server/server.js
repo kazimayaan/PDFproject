@@ -1,7 +1,5 @@
 // ---------- Imports ----------
 const express = require("express");
-const http = require("http");
-const { Server } = require("socket.io");
 const multer = require("multer");
 const cors = require("cors");
 const { v4: uuidv4 } = require("uuid");
@@ -15,36 +13,30 @@ const PORT = process.env.PORT || 4000;
 const CORS_ORIGIN = process.env.CORS_ORIGIN || "*";
 const BASE_URL = `http://localhost:${PORT}`;
 
-// ---------- App & Server ----------
 const app = express();
-const server = http.createServer(app);
-const io = new Server(server, {
-  cors: { origin: CORS_ORIGIN, methods: ["GET", "POST"] },
-});
-
-app.use(cors());
-app.use(express.json());
 app.use(cors({ origin: "*" }));
+app.use(express.json());
 
-// Cloudinary config
+// ---------- Cloudinary ----------
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
-// supabase config
+
+// ---------- Supabase ----------
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_KEY
 );
 
-// Multer memory storage for Cloudinary
+// ---------- Multer ----------
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 // ---------- Routes ----------
 
-// Upload PDF to Cloudinary and save metadata to MongoDB
+// Upload PDF
 app.post("/api/upload", upload.single("file"), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
@@ -56,10 +48,7 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
     const cloudResult = await new Promise((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
         { resource_type: "raw", folder: "pdf-annotations" },
-        (error, result) => {
-          if (error) reject(error);
-          else resolve(result);
-        }
+        (error, result) => (error ? reject(error) : resolve(result))
       );
       stream.end(req.file.buffer);
     });
@@ -67,7 +56,7 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
     const cloudUrl = cloudResult.secure_url;
     const cloudPublicId = cloudResult.public_id;
 
-    // Save metadata to MongoDB
+    // Save to MongoDB
     const db = await connectDB();
     await db.collection("documents").insertOne({
       _id: docId,
@@ -77,7 +66,7 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
       createdAt: new Date(),
     });
 
-    // uploading to supabase:
+    // Save to Supabase
     const { data, error } = await supabase.from("pdf_files").insert([
       {
         doc_id: docId,
@@ -89,14 +78,9 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
         created_at: new Date().toISOString(),
       },
     ]);
+    if (error) console.error("Supabase insert error:", error);
+    else console.log("✅ Supabase insert success:", data);
 
-    if (error) {
-      console.error("Supabase insert error:", error);
-    } else {
-      console.log("✅ Supabase insert success:", data);
-    }
-
-    // Respond with Cloudinary info
     res.json({ docId, originalName, cloudUrl, cloudPublicId });
   } catch (err) {
     console.error("Upload error:", err);
@@ -117,6 +101,8 @@ app.get("/api/docs/:docId", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch document" });
   }
 });
+
+// ---------- Annotations ----------
 
 // Fetch annotations
 app.get("/api/docs/:docId/annotations", async (req, res) => {
@@ -140,9 +126,7 @@ app.post("/api/docs/:docId/annotations", async (req, res) => {
       return res.status(400).json({ error: "Invalid data" });
 
     const db = await connectDB();
-    // Remove old annotations
     await db.collection("annotations").deleteMany({ docId: req.params.docId });
-    // Insert new ones
     const annsWithDocId = annotations.map((a) => ({
       ...a,
       docId: req.params.docId,
@@ -156,52 +140,45 @@ app.post("/api/docs/:docId/annotations", async (req, res) => {
   }
 });
 
-// ---------- Socket.IO ----------
-io.on("connection", (socket) => {
-  console.log("Client connected:", socket.id);
+// ---------- Highlights ----------
 
-  socket.on("join-document", async ({ docId, user }) => {
-    socket.join(docId);
+// Fetch highlights
+app.get("/api/docs/:docId/highlights", async (req, res) => {
+  try {
     const db = await connectDB();
-    const initial = await db
-      .collection("annotations")
-      .find({ docId })
+    const highlights = await db
+      .collection("highlights")
+      .find({ docId: req.params.docId })
       .toArray();
-    socket.emit("init-annotations", initial);
-    socket.to(docId).emit("user-joined", { user });
-  });
+    res.json(highlights);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch highlights" });
+  }
+});
 
-  socket.on("add-annotation", async ({ docId, annotation }) => {
-    const ann = { ...annotation, id: uuidv4(), docId };
+// Save highlights
+app.post("/api/docs/:docId/highlights", async (req, res) => {
+  try {
+    const { highlights } = req.body;
+    if (!Array.isArray(highlights))
+      return res.status(400).json({ error: "Invalid data" });
+
     const db = await connectDB();
-    await db.collection("annotations").insertOne(ann);
-    io.to(docId).emit("annotation-added", ann);
-  });
+    await db.collection("highlights").deleteMany({ docId: req.params.docId });
+    const highlightsWithDocId = highlights.map((h) => ({
+      ...h,
+      docId: req.params.docId,
+    }));
+    if (highlightsWithDocId.length > 0)
+      await db.collection("highlights").insertMany(highlightsWithDocId);
 
-  socket.on("update-annotation", async ({ docId, id, patch }) => {
-    const db = await connectDB();
-    await db
-      .collection("annotations")
-      .updateOne({ id, docId }, { $set: patch });
-    const updated = await db.collection("annotations").findOne({ id, docId });
-    io.to(docId).emit("annotation-updated", updated);
-  });
-
-  socket.on("delete-annotation", async ({ docId, id }) => {
-    const db = await connectDB();
-    await db.collection("annotations").deleteOne({ id, docId });
-    io.to(docId).emit("annotation-deleted", { id });
-  });
-
-  socket.on("cursor", ({ docId, user, x, y }) => {
-    socket.to(docId).emit("cursor", { user, x, y });
-  });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to save highlights" });
+  }
 });
 
 // ---------- Start Server ----------
-server.listen(PORT, () => {
+app.listen(PORT, () => {
   console.log(`✅ Server listening on ${BASE_URL}`);
 });
-
-// latest??
-// works fine till here, planning to add closing button func and admin page functionality
