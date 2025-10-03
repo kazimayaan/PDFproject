@@ -187,7 +187,7 @@ export default function ViewerPage() {
       {!meta && <div>Loading document…</div>}
       {meta && (
         <>
-          {/* Toolbar */}
+          {/* Main Toolbar (scrolls away) */}
           <div
             className="toolbar"
             style={{ display: "flex", justifyContent: "space-between" }}
@@ -234,26 +234,79 @@ export default function ViewerPage() {
               className="UtilityButtons"
               style={{ marginLeft: "auto", display: "flex", gap: 8 }}
             >
-              <button
-                className={mode === "annotate" ? "btn-active button-40" : "button-30"}
-                onClick={() =>
-                  setMode(mode === "annotate" ? "view" : "annotate")
-                }
-              >
-                {mode === "annotate" ? "Cancel" : "Add Annotation"}
-              </button>
-              <button
-                className={mode === "highlight" ? "btn-active button-40" : "button-30"}
-                onClick={() =>
-                  setMode(mode === "highlight" ? "view" : "highlight")
-                }
-              >
-                {mode === "highlight" ? "Cancel" : "Add Highlight"}
-              </button>
               <button className="button-40" onClick={handleSubmit}>
                 Submit
               </button>
             </div>
+          </div>
+
+          {/* Sticky Tools Bar */}
+          <div
+            className="tools-bar"
+            style={{
+              position: "sticky",
+              top: 0,
+              zIndex: 10,
+              borderBottom: "1px solid #eee",
+              padding: "6px 12px",
+              display: "flex",
+              gap: "10px",
+              justifyContent:"center",
+            }}
+          >
+            <button
+  className={mode === "annotate" ? "activetoolbar" : "tool-btn"}
+  onClick={() =>
+    setMode(mode === "annotate" ? "view" : "annotate")
+  }
+>
+  {mode === "annotate" ? (
+    <>
+    <img 
+      src="https://res.cloudinary.com/dq2dvsmus/image/upload/v1759349192/cf0f9696abaaf8f4bfc31589784cb061_qnjwxw.png" 
+      alt="Cancel"
+      style={{ width: "16px", height: "16px", marginRight: "5px" }}
+    />
+    Cancel
+  </>
+  ) : (
+    <>
+      <img 
+        src="https://res.cloudinary.com/dq2dvsmus/image/upload/v1759525480/bc67e96d-d7fd-4ac3-8c4f-bec17cf0a1f9.png" 
+        alt="Annotate"
+        style={{ width: "16px", height: "16px", marginRight: "5px" }}
+      />
+      Annotation
+    </>
+  )}
+</button>
+            <button
+              className={mode === "highlight" ? "activetoolbar" : "tool-btn"}
+              onClick={() =>
+                setMode(mode === "highlight" ? "view" : "highlight")
+              }
+            >
+              {mode === "highlight" ? (
+    <>
+    <img 
+      src="https://res.cloudinary.com/dq2dvsmus/image/upload/v1759349192/cf0f9696abaaf8f4bfc31589784cb061_qnjwxw.png" 
+      alt="Cancel"
+      style={{ width: "16px", height: "16px", marginRight: "5px" }}
+    />
+    Cancel
+  </>
+  ) : (
+    <>
+      <img 
+        src="https://res.cloudinary.com/dq2dvsmus/image/upload/v1759524542/a847d5e1-69e8-4bc3-95d9-9976d4f77520.png" 
+        alt="Highlight"
+        className="highlightIcon"
+        style={{ width: "20px", height: "20px", marginRight: "5px",}}
+      />
+      Highlight
+    </>
+  )}
+            </button>
           </div>
 
           <p className="hintforuser">
@@ -315,7 +368,6 @@ export default function ViewerPage() {
                         borderRadius: 3,
                       }}
                     >
-                      {/* Delete button */}
                       <img
                         src="https://res.cloudinary.com/dq2dvsmus/image/upload/v1759349192/cf0f9696abaaf8f4bfc31589784cb061_qnjwxw.png"
                         alt="Delete"
@@ -384,7 +436,6 @@ export default function ViewerPage() {
                     >
                       {a.text}
 
-                      {/* Delete Button */}
                       <img
                         src="https://res.cloudinary.com/dq2dvsmus/image/upload/v1759349192/cf0f9696abaaf8f4bfc31589784cb061_qnjwxw.png"
                         alt="Delete"
@@ -401,7 +452,6 @@ export default function ViewerPage() {
                         }}
                       />
 
-                      {/* Resize handle */}
                       <div
                         onMouseDown={(e) => handleDragMove(e, a, "resize")}
                         style={{
@@ -418,7 +468,6 @@ export default function ViewerPage() {
                   )
                 )}
 
-              {/* Preview box while drawing */}
               {dragStart && dragCurrent && (
                 <div
                   style={{
@@ -427,8 +476,12 @@ export default function ViewerPage() {
                     top: `${Math.min(dragStart.y, dragCurrent.y) * 100}%`,
                     width: `${Math.abs(dragCurrent.x - dragStart.x) * 100}%`,
                     height: `${Math.abs(dragCurrent.y - dragStart.y) * 100}%`,
-                    border: mode === "highlight" ? "2px dashed orange" : "2px dashed blue",
-                    backgroundColor: mode === "highlight" ? "rgba(255,200,0,0.2)" : "rgba(0,0,255,0.05)",
+                    border:
+                      mode === "highlight" ? "2px dashed orange" : "2px dashed blue",
+                    backgroundColor:
+                      mode === "highlight"
+                        ? "rgba(255,200,0,0.2)"
+                        : "rgba(0,0,255,0.05)",
                     pointerEvents: "none",
                   }}
                 />
@@ -438,7 +491,6 @@ export default function ViewerPage() {
         </>
       )}
 
-      {/* CSS for hover effect */}
       <style>
         {`
           .annotation-box:hover .delete-btn,
