@@ -338,3 +338,53 @@ input[type="file"]:focus::file-selector-button {
   padding: 4px;
   margin: -4px;
 }
+.activetoolbar {
+  font-size: 14px;
+  color: #444;
+  cursor: pointer;
+  padding: 4px 12px;
+  border-radius: 3px;
+  transition:background 0.4s;
+  display: flex;
+  align-items: center;
+  box-shadow: 2px 2px 5px rgba(0.4, 0.4, 0.4, 0.4);
+  border: none;color: #c70000;
+  /* font-weight: 600; */
+  /* border: 2px solid #c70000; */
+}
+
+.tool-btn {
+  font-size: 14px;
+  color: #444;
+  cursor: pointer;
+  padding: 4px 12px;
+  border-radius: 3px;
+  transition:background 0.4s;
+  display: flex;
+  align-items: center;
+  box-shadow: 2px 2px 5px rgba(0.4, 0.4, 0.4, 0.4);
+  border: none;
+}
+.tool-btn:hover {
+  background: #f2f2f2;
+}
+.tool-btn.active {
+  color: #c75000;
+  font-weight: 600;
+  border-bottom: 2px solid #c75000;
+}
+.tools-bar{
+  position: "sticky";
+  top: 0;
+  z-index: 10;
+  background: "#fafafa";
+  border-bottom: "1px solid #ddd";
+  padding: "6px 12px";
+  display: "flex";
+  gap: "20px";
+  align-items: "center";
+  border: none;
+}
+.highlightIcon{
+  filter: brightness(1.3); 
+}
