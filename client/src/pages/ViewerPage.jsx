@@ -309,13 +309,6 @@ export default function ViewerPage() {
             </button>
           </div>
 
-          <p className="hintforuser">
-            {mode === "annotate"
-              ? "Drag on the PDF to draw a box for your comment."
-              : mode === "highlight"
-              ? "Drag on the PDF to add a highlight."
-              : "Double-click a box to edit text, or hover to delete."}
-          </p>
 
           {/* PDF + Overlay */}
           <div
