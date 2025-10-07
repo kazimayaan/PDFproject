@@ -15,7 +15,7 @@ const CORS_ORIGIN = process.env.CORS_ORIGIN || "*";
 const BASE_URL = `http://localhost:${PORT}`;
 
 const app = express();
-app.use(cors({ origin: CORS_ORIGIN }));
+app.use(cors({ origin: "*", methods: ["GET", "POST", "PUT", "DELETE"], allowedHeaders: ["Content-Type"] }));
 app.use(express.json());
 
 // ---------- Cloudinary ----------
