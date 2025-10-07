@@ -14,29 +14,44 @@ export default function ManagerViewer() {
   const [page, setPage] = useState(1);
   const [numPages, setNumPages] = useState(null);
   const [selectedAnn, setSelectedAnn] = useState(null);
-  const [hiddenAnnIds, setHiddenAnnIds] = useState([]); // track hidden annotations
+  const [hiddenAnnIds, setHiddenAnnIds] = useState([]);
 
   const containerRef = useRef(null);
 
+  // Fetch document metadata and annotations
   useEffect(() => {
     const fetchMeta = async () => {
-      const res = await fetch(`${SERVER}/api/docs/${docId}`);
-      if (!res.ok) {
-        alert("Document not found");
-        return;
+      try {
+        const res = await fetch(`${SERVER}/api/docs/${docId}`);
+        if (!res.ok) throw new Error("Document not found");
+        const j = await res.json();
+        setMeta(j);
+      } catch (err) {
+        console.error(err);
+        alert("Failed to fetch document");
       }
-      const j = await res.json();
-      setMeta(j);
     };
-    fetchMeta();
 
-    const fetchAnns = async () => {
-      const res = await fetch(`${SERVER}/api/docs/${docId}/annotations`);
-      if (!res.ok) return;
-      const data = await res.json();
-      setAnns(data);
+    const fetchAnnotations = async () => {
+      try {
+        const resAnn = await fetch(`${SERVER}/api/docs/${docId}/annotations`);
+        if (!resAnn.ok) throw new Error("Failed to fetch annotations");
+        const dataAnn = await resAnn.json();
+
+        // Ensure type exists ("highlight" or "annotation")
+        const combined = dataAnn.map(a => ({
+          ...a,
+          type: a.type || "annotation"
+        }));
+
+        setAnns(combined);
+      } catch (err) {
+        console.error("Failed to fetch annotations:", err);
+      }
     };
-    fetchAnns();
+
+    fetchMeta();
+    fetchAnnotations();
   }, [SERVER, docId]);
 
   const handleSelectAnn = (ann) => {
@@ -47,8 +62,8 @@ export default function ManagerViewer() {
   const toggleAnnotationVisibility = (annId) => {
     setHiddenAnnIds((prev) =>
       prev.includes(annId)
-        ? prev.filter((id) => id !== annId) // unhide
-        : [...prev, annId] // hide
+        ? prev.filter((id) => id !== annId)
+        : [...prev, annId]
     );
   };
 
@@ -60,11 +75,11 @@ export default function ManagerViewer() {
 
   return (
     <div className="card">
-      {/* Heading + Toolbar (full width) */}
       <h2>Manager Viewer</h2>
       {!meta && <div>Loading document…</div>}
       {meta && (
         <>
+          {/* Toolbar */}
           <div
             className="toolbar"
             style={{ display: "flex", justifyContent: "space-between" }}
@@ -94,7 +109,7 @@ export default function ManagerViewer() {
             </div>
           </div>
 
-          {/* Main Content Row: PDF + Right Pane */}
+          {/* PDF + Right Pane */}
           <div style={{ display: "flex", gap: 12, marginTop: 12 }}>
             {/* PDF Container */}
             <div style={{ flex: 2 }}>
@@ -126,12 +141,12 @@ export default function ManagerViewer() {
                   />
                 </Document>
 
-                {/* Overlay annotations */}
+                {/* Overlay annotations + highlights */}
                 <div style={{ position: "absolute", inset: 0 }}>
                   {anns
-                    .filter((a) => a.page === page)
-                    .filter((a) => !hiddenAnnIds.includes(a.id)) // hide only specific ones
-                    .map((a) => (
+                    .filter(a => a.page === page)
+                    .filter(a => !hiddenAnnIds.includes(a.id))
+                    .map(a => (
                       <div
                         key={a.id}
                         style={{
@@ -140,25 +155,29 @@ export default function ManagerViewer() {
                           top: `${a.y * 100}%`,
                           width: `${a.w * 100}%`,
                           height: `${a.h * 100}%`,
+                          backgroundColor:
+                            a.type === "highlight"
+                              ? "rgba(255,255,0,0.4)"
+                              : selectedAnn?.id === a.id
+                              ? "rgba(0,47,255,0.1)"
+                              : "rgba(255,0,0,0.1)",
                           border:
-                            selectedAnn?.id === a.id
+                            a.type === "highlight"
+                              ? "1px solid #eab308"
+                              : selectedAnn?.id === a.id
                               ? "3px solid blue"
                               : "2px solid red",
-                          backgroundColor:
-                            selectedAnn?.id === a.id
-                              ? "rgba(0, 47, 255, 0.1)"
-                              : "rgba(255,0,0,0.1)",
-                          padding: "2px",
-                          fontSize: "14px",
+                          borderRadius: a.type === "highlight" ? 3 : 0,
+                          cursor: "pointer",
+                          padding: a.type === "annotation" ? "2px" : 0,
                           overflow: "hidden",
                           whiteSpace: "pre-wrap",
                           boxSizing: "border-box",
-                          cursor: "pointer",
                         }}
                         onClick={() => handleSelectAnn(a)}
                         title={a.text}
                       >
-                        {a.text}
+                        {a.type === "annotation" ? a.text : null}
                       </div>
                     ))}
                 </div>
@@ -167,7 +186,7 @@ export default function ManagerViewer() {
 
             {/* Right Pane */}
             <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-              {/* Comment Viewer */}
+              {/* Selected comment panel */}
               <div
                 style={{
                   minHeight: 120,
@@ -178,7 +197,7 @@ export default function ManagerViewer() {
                   backgroundColor: "#f9f9f9",
                   overflowY: "auto",
                   display: "flex",
-                  flexDirection:"column"
+                  flexDirection: "column",
                 }}
               >
                 {selectedAnn ? (
@@ -207,7 +226,7 @@ export default function ManagerViewer() {
                 )}
               </div>
 
-              {/* List of comments */}
+              {/* All annotations/highlights list */}
               <div
                 style={{
                   flex: 1,
@@ -236,7 +255,9 @@ export default function ManagerViewer() {
                         selectedAnn?.id === a.id ? "#d0ebff" : "#f5f5f5",
                     }}
                   >
-                    <strong>{`${index + 1}${getOrdinal(index + 1)} comment`}</strong>
+                    <strong>{`${index + 1}${getOrdinal(
+                      index + 1
+                    )} ${a.type}`}</strong>
                   </div>
                 ))}
               </div>

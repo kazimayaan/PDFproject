@@ -1,7 +1,6 @@
+// server.js
 // ---------- Imports ----------
 const express = require("express");
-const http = require("http");
-const { Server } = require("socket.io");
 const multer = require("multer");
 const cors = require("cors");
 const { v4: uuidv4 } = require("uuid");
@@ -15,36 +14,30 @@ const PORT = process.env.PORT || 4000;
 const CORS_ORIGIN = process.env.CORS_ORIGIN || "*";
 const BASE_URL = `http://localhost:${PORT}`;
 
-// ---------- App & Server ----------
 const app = express();
-const server = http.createServer(app);
-const io = new Server(server, {
-  cors: { origin: CORS_ORIGIN, methods: ["GET", "POST"] },
-});
-
-app.use(cors());
+app.use(cors({ origin: CORS_ORIGIN }));
 app.use(express.json());
-app.use(cors({ origin: "*" }));
 
-// Cloudinary config
+// ---------- Cloudinary ----------
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
-// supabase config
+
+// ---------- Supabase (optional) ----------
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_KEY
 );
 
-// Multer memory storage for Cloudinary
+// ---------- Multer ----------
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 // ---------- Routes ----------
 
-// Upload PDF to Cloudinary and save metadata to MongoDB
+// Upload PDF
 app.post("/api/upload", upload.single("file"), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
@@ -56,10 +49,7 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
     const cloudResult = await new Promise((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
         { resource_type: "raw", folder: "pdf-annotations" },
-        (error, result) => {
-          if (error) reject(error);
-          else resolve(result);
-        }
+        (error, result) => (error ? reject(error) : resolve(result))
       );
       stream.end(req.file.buffer);
     });
@@ -67,7 +57,7 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
     const cloudUrl = cloudResult.secure_url;
     const cloudPublicId = cloudResult.public_id;
 
-    // Save metadata to MongoDB
+    // Save to MongoDB
     const db = await connectDB();
     await db.collection("documents").insertOne({
       _id: docId,
@@ -77,7 +67,7 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
       createdAt: new Date(),
     });
 
-    // uploading to supabase:
+    // Save to Supabase (optional)
     const { data, error } = await supabase.from("pdf_files").insert([
       {
         doc_id: docId,
@@ -89,14 +79,9 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
         created_at: new Date().toISOString(),
       },
     ]);
+    if (error) console.error("Supabase insert error:", error);
+    else console.log("✅ Supabase insert success:", data);
 
-    if (error) {
-      console.error("Supabase insert error:", error);
-    } else {
-      console.log("✅ Supabase insert success:", data);
-    }
-
-    // Respond with Cloudinary info
     res.json({ docId, originalName, cloudUrl, cloudPublicId });
   } catch (err) {
     console.error("Upload error:", err);
@@ -114,11 +99,12 @@ app.get("/api/docs/:docId", async (req, res) => {
     if (!doc) return res.status(404).json({ error: "Document not found" });
     res.json(doc);
   } catch (err) {
+    console.error("Fetch doc error:", err);
     res.status(500).json({ error: "Failed to fetch document" });
   }
 });
 
-// Fetch annotations
+// ---------- Annotations ----------
 app.get("/api/docs/:docId/annotations", async (req, res) => {
   try {
     const db = await connectDB();
@@ -128,11 +114,11 @@ app.get("/api/docs/:docId/annotations", async (req, res) => {
       .toArray();
     res.json(anns);
   } catch (err) {
+    console.error("Fetch annotations error:", err);
     res.status(500).json({ error: "Failed to fetch annotations" });
   }
 });
 
-// Save annotations
 app.post("/api/docs/:docId/annotations", async (req, res) => {
   try {
     const { annotations } = req.body;
@@ -140,9 +126,7 @@ app.post("/api/docs/:docId/annotations", async (req, res) => {
       return res.status(400).json({ error: "Invalid data" });
 
     const db = await connectDB();
-    // Remove old annotations
     await db.collection("annotations").deleteMany({ docId: req.params.docId });
-    // Insert new ones
     const annsWithDocId = annotations.map((a) => ({
       ...a,
       docId: req.params.docId,
@@ -152,56 +136,168 @@ app.post("/api/docs/:docId/annotations", async (req, res) => {
 
     res.json({ success: true });
   } catch (err) {
+    console.error("Save annotations error:", err);
     res.status(500).json({ error: "Failed to save annotations" });
   }
 });
 
-// ---------- Socket.IO ----------
-io.on("connection", (socket) => {
-  console.log("Client connected:", socket.id);
-
-  socket.on("join-document", async ({ docId, user }) => {
-    socket.join(docId);
+// ---------- Highlights ----------
+app.get("/api/docs/:docId/highlights", async (req, res) => {
+  try {
     const db = await connectDB();
-    const initial = await db
-      .collection("annotations")
-      .find({ docId })
+    const highlights = await db
+      .collection("highlights")
+      .find({ docId: req.params.docId })
       .toArray();
-    socket.emit("init-annotations", initial);
-    socket.to(docId).emit("user-joined", { user });
-  });
+    res.json(highlights);
+  } catch (err) {
+    console.error("Fetch highlights error:", err);
+    res.status(500).json({ error: "Failed to fetch highlights" });
+  }
+});
 
-  socket.on("add-annotation", async ({ docId, annotation }) => {
-    const ann = { ...annotation, id: uuidv4(), docId };
+app.post("/api/docs/:docId/highlights", async (req, res) => {
+  try {
+    const { highlights } = req.body;
+    if (!Array.isArray(highlights))
+      return res.status(400).json({ error: "Invalid data" });
+
     const db = await connectDB();
-    await db.collection("annotations").insertOne(ann);
-    io.to(docId).emit("annotation-added", ann);
-  });
+    await db.collection("highlights").deleteMany({ docId: req.params.docId });
+    const highlightsWithDocId = highlights.map((h) => ({
+      ...h,
+      docId: req.params.docId,
+    }));
+    if (highlightsWithDocId.length > 0)
+      await db.collection("highlights").insertMany(highlightsWithDocId);
 
-  socket.on("update-annotation", async ({ docId, id, patch }) => {
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Save highlights error:", err);
+    res.status(500).json({ error: "Failed to save highlights" });
+  }
+});
+
+// ---------- Comments (NEW FEATURE) ----------
+
+// Fetch all comments for a doc
+app.get("/api/docs/:docId/comments", async (req, res) => {
+  try {
+    const db = await connectDB();
+    const comments = await db
+      .collection("comments")
+      .find({ docId: req.params.docId })
+      .toArray();
+    res.json(comments);
+  } catch (err) {
+    console.error("Fetch comments error:", err);
+    res.status(500).json({ error: "Failed to fetch comments" });
+  }
+});
+
+// Replace all comments (same pattern as annotations/highlights)
+app.post("/api/docs/:docId/comments", async (req, res) => {
+  try {
+    const { comments } = req.body;
+    if (!Array.isArray(comments))
+      return res.status(400).json({ error: "Invalid data" });
+
+    const db = await connectDB();
+    await db.collection("comments").deleteMany({ docId: req.params.docId });
+
+    const commentsWithMeta = comments.map((c) => ({
+      // ensure id exists for the comment front-end expectations
+      id: c.id || uuidv4(),
+      x: c.x,
+      y: c.y,
+      page: c.page,
+      // any other positioning fields...
+      text: c.text || "",
+      // createdAt/updatedAt handled here
+      createdAt: c.createdAt ? new Date(c.createdAt) : new Date(),
+      updatedAt: c.updatedAt ? new Date(c.updatedAt) : new Date(),
+      docId: req.params.docId,
+    }));
+
+    if (commentsWithMeta.length > 0)
+      await db.collection("comments").insertMany(commentsWithMeta);
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Save comments error:", err);
+    res.status(500).json({ error: "Failed to save comments" });
+  }
+});
+
+// Add single comment (useful for incremental saves)
+app.post("/api/docs/:docId/comments/add", async (req, res) => {
+  try {
+    const c = req.body;
+    if (!c || typeof c !== "object")
+      return res.status(400).json({ error: "Invalid comment payload" });
+
+    const db = await connectDB();
+    const comment = {
+      id: c.id || uuidv4(),
+      x: c.x,
+      y: c.y,
+      page: c.page,
+      text: c.text || "",
+      createdAt: c.createdAt ? new Date(c.createdAt) : new Date(),
+      updatedAt: new Date(),
+      docId: req.params.docId,
+    };
+
+    await db.collection("comments").insertOne(comment);
+    res.json({ success: true, comment });
+  } catch (err) {
+    console.error("Add comment error:", err);
+    res.status(500).json({ error: "Failed to add comment" });
+  }
+});
+
+// Update single comment
+app.put("/api/docs/:docId/comments/:id", async (req, res) => {
+  try {
+    const patch = req.body;
+    if (!patch || typeof patch !== "object")
+      return res.status(400).json({ error: "Invalid patch payload" });
+
+    const db = await connectDB();
+    const updatePayload = {
+      ...patch,
+      updatedAt: new Date(),
+    };
+    await db
+      .collection("comments")
+      .updateOne({ id: req.params.id, docId: req.params.docId }, { $set: updatePayload });
+
+    const updated = await db
+      .collection("comments")
+      .findOne({ id: req.params.id, docId: req.params.docId });
+
+    res.json({ success: true, comment: updated });
+  } catch (err) {
+    console.error("Update comment error:", err);
+    res.status(500).json({ error: "Failed to update comment" });
+  }
+});
+
+// Delete single comment
+app.delete("/api/docs/:docId/comments/:id", async (req, res) => {
+  try {
     const db = await connectDB();
     await db
-      .collection("annotations")
-      .updateOne({ id, docId }, { $set: patch });
-    const updated = await db.collection("annotations").findOne({ id, docId });
-    io.to(docId).emit("annotation-updated", updated);
-  });
-
-  socket.on("delete-annotation", async ({ docId, id }) => {
-    const db = await connectDB();
-    await db.collection("annotations").deleteOne({ id, docId });
-    io.to(docId).emit("annotation-deleted", { id });
-  });
-
-  socket.on("cursor", ({ docId, user, x, y }) => {
-    socket.to(docId).emit("cursor", { user, x, y });
-  });
+      .collection("comments")
+      .deleteOne({ id: req.params.id, docId: req.params.docId });
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Delete comment error:", err);
+    res.status(500).json({ error: "Failed to delete comment" });
+  }
 });
 
 // ---------- Start Server ----------
-server.listen(PORT, () => {
+app.listen(PORT, () => {
   console.log(`✅ Server listening on ${BASE_URL}`);
 });
-
-// latest??
-// works fine till here, planning to add closing button func and admin page functionality
